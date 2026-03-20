@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { format } from "date-fns";
-import { Clock } from "lucide-react";
+import { Clock, Loader2 } from "lucide-react";
 import { type ShiftType, type Agent, type Shift } from "../../types";
 
 interface Props {
   date: Date;
   agents: Agent[];
   shifts: Shift[];
-  onAssignShift: (date: Date, type: ShiftType, agentId: string) => void;
+  onAssignShift: (date: Date, type: ShiftType, agentId: string) => Promise<void>;
   onUpdateHorario: (date: Date, type: ShiftType, horario: string) => void;
   isToday: boolean;
   isWeekend: boolean;
@@ -26,6 +26,7 @@ export function CalendarCell({
 }: Props) {
   const [editingBlock, setEditingBlock] = useState<ShiftType | null>(null);
   const [localTimes, setLocalTimes] = useState<{ [key: string]: string }>({});
+  const [loadingBlock, setLoadingBlock] = useState<ShiftType | null>(null);
 
   const dateStr = format(date, "yyyy-MM-dd");
   const dayShifts = shifts.filter((s) => s.fecha === dateStr);
@@ -41,10 +42,33 @@ export function CalendarCell({
     setEditingBlock(null);
   };
 
+  const handleAssign = async (blockLabel: ShiftType, newAgentId: string) => {
+    const assigned = dayShifts.find((s) => s.tipo_turno === blockLabel);
+    
+    // Ignorar si elige el mismo
+    if (assigned?.agente_id === newAgentId) return;
+
+    // Confirmar si ya hay alguien y lo va a cambiar/quitar
+    if (assigned && assigned.agente_id) {
+      if (!window.confirm("¿Deseas modificar este turno asignado?")) {
+        return;
+      }
+    }
+
+    setLoadingBlock(blockLabel);
+    try {
+      await onAssignShift(date, blockLabel, newAgentId);
+      setEditingBlock(null);
+    } finally {
+      setLoadingBlock(null);
+    }
+  };
+
   const renderBlock = (blockLabel: ShiftType) => {
     const assigned = dayShifts.find((s) => s.tipo_turno === blockLabel);
     const isEditing = editingBlock === blockLabel;
     const assignedAgentName = assigned ? agents.find(a => a.id === assigned.agente_id)?.nombre : null;
+    const isSaving = loadingBlock === blockLabel;
 
     return (
       <div
@@ -59,7 +83,7 @@ export function CalendarCell({
       >
         <div className="flex items-center justify-between w-full">
           <span
-            className={`font-bold text-[10px] sm:text-[11px] uppercase tracking-tight leading-none ${
+            className={`font-bold text-[10px] sm:text-[11px] uppercase tracking-tight leading-none flex items-center gap-1 ${
               blockLabel === "Franco Compensatorio"
                 ? "text-red-700"
                 : blockLabel === "Trasnoche"
@@ -68,6 +92,7 @@ export function CalendarCell({
             }`}
           >
             {blockLabel}
+            {isSaving && <Loader2 size={10} className="animate-spin text-blue-500" />}
           </span>
           {isAdmin && (
             <button
@@ -83,12 +108,10 @@ export function CalendarCell({
         <div className="w-full flex flex-col gap-1.5">
           {isAdmin ? (
             <select
-              className="text-xs font-medium bg-white border border-slate-200 rounded p-1.5 outline-none text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full transition-shadow hover:border-slate-300"
+              disabled={isSaving}
+              className={`text-xs font-medium bg-white border border-slate-200 rounded p-1.5 outline-none text-slate-800 transition-all ${isSaving ? 'opacity-50 cursor-wait' : 'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer hover:border-slate-300'}`}
               value={assigned?.agente_id || ""}
-              onChange={(e) => {
-                onAssignShift(date, blockLabel, e.target.value);
-                setEditingBlock(null);
-              }}
+              onChange={(e) => handleAssign(blockLabel, e.target.value)}
             >
               <option value="">- Sin asignar -</option>
               {agents.map((ag) => (
