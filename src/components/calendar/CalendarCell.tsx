@@ -128,16 +128,16 @@ export function CalendarCell({
   };
 
   const weekdayBlocks: ShiftType[] = [
-    "Trasnoche",
     "Mañana",
     "Tarde",
     "Noche",
+    "Trasnoche",
     "Franco Compensatorio",
   ];
   const weekendBlocks: ShiftType[] = [
-    "Trasnoche",
     "Finde Sábado",
     "Finde Domingo",
+    "Trasnoche",
     "Franco Compensatorio",
   ];
 
