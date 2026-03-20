@@ -22,4 +22,5 @@ export interface Shift {
   fecha: string; // YYYY-MM-DD
   tipo_turno: ShiftType;
   observaciones?: string;
+  horario_personalizado?: string;
 }

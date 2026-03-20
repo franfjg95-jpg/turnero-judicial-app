@@ -66,7 +66,7 @@ export function TurnosPage() {
           await api.shifts.remove(nextDateStr, "Franco Compensatorio");
         }
       } else {
-        // Asignar
+        // Asignar (hace upsert)
         await api.shifts.assign(dateStr, type, agentId);
         
         // Asignar automáticamente el franco al día siguiente si es Trasnoche
@@ -75,12 +75,27 @@ export function TurnosPage() {
           await api.shifts.assign(nextDateStr, "Franco Compensatorio", agentId);
         }
       }
-      // Recargar para tener el estado real de la DB
+      // Recargar para tener el estado real de la DB sin recargar toda la pag asíncronamente
       await loadData();
     } catch (err: any) {
       alert("Error al actualizar turno: " + err.message);
     }
   };
+
+  const handleUpdateHorario = async (date: Date, type: ShiftType, horario: string) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    
+    try {
+      await api.shifts.updateHorario(dateStr, type, horario);
+      // Solo actualizamos de fondo
+      const sDateStr = format(startDate, "yyyy-MM-dd");
+      const eDateStr = format(endDate, "yyyy-MM-dd");
+      const shiftsData = await api.shifts.getByDateRange(sDateStr, eDateStr);
+      setShifts(shiftsData);
+    } catch (err: any) {
+      alert("Error al guardar el horario personalizado: " + err.message);
+    }
+  }
 
   const weekDaysHeaders = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
@@ -144,6 +159,7 @@ export function TurnosPage() {
                    agents={agents}
                    shifts={shifts}
                    onAssignShift={handleAssignShift}
+                   onUpdateHorario={handleUpdateHorario}
                  />
                </div>
             )

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Trash2, Edit2, Loader2 } from "lucide-react";
+import { Trash2, Edit2, Loader2 } from "lucide-react";
 import { api } from "../api/supabase";
 import type { Agent } from "../types";
 

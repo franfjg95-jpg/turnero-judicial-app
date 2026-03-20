@@ -45,19 +45,32 @@ export const api = {
       if (error) throw error;
       return data || [];
     },
-    async assign(fecha: string, tipo_turno: ShiftType, agente_id: string): Promise<Shift> {
-      // Intenta borrar si ya existe un turno en este bloque para esta fecha
-      await supabase
-        .from("turnos")
-        .delete()
-        .match({ fecha, tipo_turno });
+    async assign(fecha: string, tipo_turno: ShiftType, agente_id: string, horario_personalizado?: string): Promise<Shift> {
+      const { data: existing } = await supabase.from('turnos').select('*').match({fecha, tipo_turno}).maybeSingle();
+      
+      const payload: any = { fecha, tipo_turno, agente_id };
+      if (horario_personalizado !== undefined) {
+         payload.horario_personalizado = horario_personalizado;
+      } else if (existing) {
+         payload.horario_personalizado = existing.horario_personalizado;
+      }
 
-      // Inserta el nuevo
-      const { data, error } = await supabase
-        .from("turnos")
-        .insert([{ fecha, tipo_turno, agente_id }])
-        .select()
-        .single();
+      if (existing) {
+         const { data, error } = await supabase.from('turnos').update(payload).eq('id', existing.id).select().single();
+         if (error) throw error;
+         return data;
+      } else {
+         const { data, error } = await supabase.from('turnos').insert([payload]).select().single();
+         if (error) throw error;
+         return data;
+      }
+    },
+    async updateHorario(fecha: string, tipo_turno: ShiftType, horario_personalizado: string): Promise<Shift> {
+      const { data: existing } = await supabase.from('turnos').select('*').match({fecha, tipo_turno}).maybeSingle();
+      if (!existing) {
+         throw new Error("Debes seleccionar un agente antes de establecer un horario personalizado.");
+      }
+      const { data, error } = await supabase.from('turnos').update({ horario_personalizado }).eq('id', existing.id).select().single();
       if (error) throw error;
       return data;
     },
