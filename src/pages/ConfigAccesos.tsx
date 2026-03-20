@@ -64,6 +64,7 @@ export function ConfigAccesos() {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50 text-slate-600 text-sm font-semibold text-left">
               <tr>
+                <th className="px-6 py-4">Nombre</th>
                 <th className="px-6 py-4">Usuario (Correo)</th>
                 <th className="px-6 py-4">Estado</th>
                 <th className="px-6 py-4 text-right">Acción</th>
@@ -72,7 +73,8 @@ export function ConfigAccesos() {
             <tbody className="divide-y divide-slate-200">
               {pendings.map((prof) => (
                 <tr key={prof.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-800">{prof.email}</td>
+                  <td className="px-6 py-4 font-bold text-slate-800">{prof.nombre || 'Sin nombre'}</td>
+                  <td className="px-6 py-4 font-medium text-slate-600">{prof.email}</td>
                   <td className="px-6 py-4">
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
                       <Clock size={12} /> Pendiente

@@ -28,7 +28,7 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: React.Re
         </div>
         <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-3">Acceso Restringido</h2>
         <p className="text-slate-600 max-w-md text-base sm:text-lg leading-relaxed">
-          Tu cuenta está siendo revisada por la administración de la UJ. Te avisaremos cuando puedas ver el turnero.
+          Registro exitoso. Espera a que la administración de la UJ autorice tu acceso.
         </p>
       </div>
     );

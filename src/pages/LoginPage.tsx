@@ -5,6 +5,7 @@ import { Loader2, Lock, UserPlus } from "lucide-react";
 
 export function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -37,6 +38,7 @@ export function LoginPage() {
           const { error: profileError } = await supabase.from('perfiles').insert({
             id: data.user.id,
             email: email,
+            nombre: nombre || 'Sumariante',
             estado: 'pendiente',
             is_admin: false
           });
@@ -86,6 +88,19 @@ export function LoginPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!isLogin && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Nombre Completo</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
+                placeholder="Ej. Juan Pérez"
+                required={!isLogin}
+              />
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico</label>
             <input
@@ -125,6 +140,7 @@ export function LoginPage() {
               setIsLogin(!isLogin);
               setError("");
               setSuccess("");
+              setNombre("");
             }}
             className="text-blue-600 font-semibold hover:underline"
             type="button"
