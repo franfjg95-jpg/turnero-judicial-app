@@ -1,7 +1,23 @@
 import { supabase } from "../lib/supabase";
-import type { Agent, Shift, ShiftType } from "../types";
+import type { Agent, Shift, ShiftType, Profile } from "../types";
 
 export const api = {
+  auth: {
+    async getProfile(id: string): Promise<Profile> {
+      const { data, error } = await supabase.from('perfiles').select('*').eq('id', id).single();
+      if (error) throw error;
+      return data;
+    },
+    async getPendingProfiles(): Promise<Profile[]> {
+      const { data, error } = await supabase.from('perfiles').select('*').eq('estado', 'pendiente').order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    async authorizeProfile(id: string): Promise<void> {
+      const { error } = await supabase.from('perfiles').update({ estado: 'aprobado' }).eq('id', id);
+      if (error) throw error;
+    }
+  },
   agents: {
     async getAll(): Promise<Agent[]> {
       const { data, error } = await supabase

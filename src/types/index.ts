@@ -22,3 +22,11 @@ export interface Shift {
   observaciones?: string;
   horario_personalizado?: string;
 }
+
+export interface Profile {
+  id: string;
+  email: string;
+  estado: 'pendiente' | 'aprobado';
+  is_admin: boolean;
+  created_at: string;
+}
