@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Clock, Loader2 } from "lucide-react";
 import { type ShiftType, type Agent, type Shift } from "../../types";
@@ -27,6 +27,22 @@ export function CalendarCell({
   const [editingBlock, setEditingBlock] = useState<ShiftType | null>(null);
   const [localTimes, setLocalTimes] = useState<{ [key: string]: string }>({});
   const [loadingBlock, setLoadingBlock] = useState<ShiftType | null>(null);
+  
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    blockLabel: ShiftType;
+    newAgentId: string;
+    newAgentName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!confirmModal?.isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmModal(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmModal]);
 
   const dateStr = format(date, "yyyy-MM-dd");
   const dayShifts = shifts.filter((s) => s.fecha === dateStr);
@@ -50,17 +66,27 @@ export function CalendarCell({
 
     // Confirmar si ya hay alguien y lo va a cambiar/quitar
     if (assigned && assigned.agente_id) {
-      if (!window.confirm("¿Deseas modificar este turno asignado?")) {
-        return;
-      }
+       const newAgentName = newAgentId ? agents.find(a => a.id === newAgentId)?.nombre : "Libre (Sin asignar)";
+       setConfirmModal({
+         isOpen: true,
+         blockLabel,
+         newAgentId,
+         newAgentName: newAgentName || ""
+       });
+       return;
     }
 
+    await executeAssign(blockLabel, newAgentId);
+  };
+
+  const executeAssign = async (blockLabel: ShiftType, newAgentId: string) => {
     setLoadingBlock(blockLabel);
     try {
       await onAssignShift(date, blockLabel, newAgentId);
       setEditingBlock(null);
     } finally {
       setLoadingBlock(null);
+      setConfirmModal(null);
     }
   };
 
@@ -168,29 +194,63 @@ export function CalendarCell({
   ];
 
   return (
-    <div
-      className={`min-h-[160px] h-full p-2.5 sm:p-3 flex flex-col gap-2 transition-all group ${
-        isToday ? "ring-2 ring-blue-500 ring-inset" : "border-r border-b border-slate-200"
-      } ${isWeekend ? "bg-slate-100" : "bg-slate-50"}`}
-    >
-      <div className="flex justify-between items-center mb-1.5 px-0.5">
-        <span
-          className={`text-[15px] font-extrabold ${
-            isToday ? "text-blue-600" : "text-slate-800"
-          }`}
-        >
-          {format(date, "d")}
-        </span>
-        <span className={`text-[10px] font-bold uppercase tracking-wider truncate w-16 text-right ${
-          isWeekend ? "text-slate-500" : "text-slate-400"
-        }`}>
-          {format(date, "EEEE")}
-        </span>
+    <>
+      <div
+        className={`min-h-[160px] h-full p-2.5 sm:p-3 flex flex-col gap-2 transition-all group ${
+          isToday ? "ring-2 ring-blue-500 ring-inset" : "border-r border-b border-slate-200"
+        } ${isWeekend ? "bg-slate-100" : "bg-slate-50"}`}
+      >
+        <div className="flex justify-between items-center mb-1.5 px-0.5">
+          <span
+            className={`text-[15px] font-extrabold ${
+              isToday ? "text-blue-600" : "text-slate-800"
+            }`}
+          >
+            {format(date, "d")}
+          </span>
+          <span className={`text-[10px] font-bold uppercase tracking-wider truncate w-16 text-right ${
+            isWeekend ? "text-slate-500" : "text-slate-400"
+          }`}>
+            {format(date, "EEEE")}
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-2 flex-1 justify-start">
+          {blocksToRender.map(renderBlock)}
+        </div>
       </div>
 
-      <div className="flex flex-col gap-2 flex-1 justify-start">
-        {blocksToRender.map(renderBlock)}
-      </div>
-    </div>
+      {confirmModal && confirmModal.isOpen && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setConfirmModal(null)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full outline outline-1 outline-slate-200 transform animate-in scale-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-800 mb-2">¿Confirmar Cambio de Turno?</h3>
+            <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+              Ya hay un agente asignado. ¿Deseas modificarlo por <span className="font-bold text-slate-800">{confirmModal.newAgentName}</span>?
+            </p>
+            
+            <div className="flex justify-end gap-3 font-medium text-sm">
+              <button 
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => executeAssign(confirmModal.blockLabel, confirmModal.newAgentId)}
+                className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 shadow-sm transition-colors"
+              >
+                SÍ, Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
