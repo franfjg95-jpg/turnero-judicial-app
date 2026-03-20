@@ -13,6 +13,16 @@ export function AgentesPage() {
 
   const [form, setForm] = useState({ nombre: "", puesto: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean, id: string, name: string } | null>(null);
+
+  useEffect(() => {
+    if (!confirmDelete?.isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmDelete(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [confirmDelete]);
 
   useEffect(() => {
     if (user) loadAgents();
@@ -57,12 +67,16 @@ export function AgentesPage() {
     setEditingId(agent.id);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("¿Seguro que deseas eliminar este agente?")) return;
+  const handleDeleteClick = (id: string, name: string) => {
+    setConfirmDelete({ isOpen: true, id, name });
+  };
+
+  const executeDelete = async (id: string) => {
     try {
       setLoading(true);
       await api.agents.delete(id);
       await loadAgents();
+      setConfirmDelete(null);
     } catch (err: any) {
       setError(err.message);
       setLoading(false);
@@ -158,14 +172,16 @@ export function AgentesPage() {
                       <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => handleEdit(ag)}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors inline-block mr-2"
+                          disabled={loading}
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors inline-block mr-2 disabled:opacity-50"
                           title="Editar"
                         >
                           <Edit2 size={16} />
                         </button>
                         <button
-                          onClick={() => handleDelete(ag.id)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors inline-block"
+                          onClick={() => handleDeleteClick(ag.id, ag.nombre)}
+                          disabled={loading}
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors inline-block disabled:opacity-50"
                           title="Eliminar"
                         >
                           <Trash2 size={16} />
@@ -179,6 +195,41 @@ export function AgentesPage() {
           )}
         </div>
       </div>
+
+      {confirmDelete && confirmDelete.isOpen && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
+          onClick={() => !loading && setConfirmDelete(null)}
+        >
+          <div 
+            className="bg-white rounded-xl shadow-lg border border-slate-200 p-6 max-w-sm w-full transform animate-in scale-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Eliminar Personal</h3>
+            <p className="text-slate-600 text-sm mb-5 leading-relaxed">
+              ¿Estás seguro de que deseas eliminar a <span className="font-bold text-slate-800">{confirmDelete.name}</span> del sistema? Esta acción es irreversible.
+            </p>
+
+            <div className="flex justify-end gap-3 font-medium text-sm">
+              <button 
+                onClick={() => setConfirmDelete(null)}
+                disabled={loading}
+                className="px-4 py-2 rounded-md bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={() => executeDelete(confirmDelete.id)}
+                disabled={loading}
+                className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {loading && <Loader2 size={14} className="animate-spin" />}
+                Sí, Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
