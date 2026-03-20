@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday as isTodayFn, isWeekend as isWeekendFn, startOfWeek, endOfWeek, addDays } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday as isTodayFn, isWeekend as isWeekendFn, startOfWeek, endOfWeek, addDays, isBefore, startOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { CalendarCell } from "../components/calendar/CalendarCell";
@@ -154,6 +154,9 @@ export function TurnosPage() {
               const isToday = isTodayFn(day);
               const isWeekend = isWeekendFn(day);
               const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+              
+              const isPast = isBefore(startOfDay(day), startOfDay(new Date()));
+              const canEdit = isAdmin && !isPast;
 
               return (
                  <div key={day.toISOString()} className={`transition-opacity h-full flex flex-col ${!isCurrentMonth ? 'opacity-40' : ''}`}>
@@ -161,7 +164,7 @@ export function TurnosPage() {
                      date={day}
                      isToday={isToday}
                      isWeekend={isWeekend}
-                     isAdmin={isAdmin}
+                     isAdmin={canEdit}
                      agents={agents}
                      shifts={shifts}
                      onAssignShift={handleAssignShift}
