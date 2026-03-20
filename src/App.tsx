@@ -3,12 +3,11 @@ import { Navbar } from "./components/layout/Navbar";
 import { TurnosPage } from "./pages/TurnosPage";
 import { AgentesPage } from "./pages/AgentesPage";
 import { LoginPage } from "./pages/LoginPage";
-import { ConfigAccesos } from "./pages/ConfigAccesos";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { Clock, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 function ProtectedRoute({ children, requireAdmin = false }: { children: React.ReactNode, requireAdmin?: boolean }) {
-  const { user, profile, loading } = useAuth();
+  const { user, loading } = useAuth();
   
   if (loading) {
     return (
@@ -19,36 +18,7 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: React.Re
   }
   
   if (!user) return <Navigate to="/login" replace />;
-  
-  if (!profile) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center animate-in fade-in duration-300">
-        <div className="bg-red-100 text-red-600 p-4 rounded-full mb-6 ring-4 ring-red-50">
-          <Clock size={40} />
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-3">Acceso Denegado</h2>
-        <p className="text-slate-600 max-w-md text-base sm:text-lg leading-relaxed">
-          Tu cuenta ha sido rechazada o eliminada del sistema. No tienes acceso a la Unidad Judicial.
-        </p>
-      </div>
-    );
-  }
-
-  if (profile.estado === 'pendiente') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] p-6 text-center animate-in fade-in duration-300">
-        <div className="bg-amber-100 text-amber-600 p-4 rounded-full mb-6 ring-4 ring-amber-50">
-          <Clock size={40} />
-        </div>
-        <h2 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-3">Acceso Restringido</h2>
-        <p className="text-slate-600 max-w-md text-base sm:text-lg leading-relaxed">
-          Registro exitoso. Tu cuenta está pendiente de aprobación por la administración de la UJ. Te avisaremos cuando puedas ver el turnero.
-        </p>
-      </div>
-    );
-  }
-  
-  if (requireAdmin && !profile?.is_admin) return <Navigate to="/" replace />;
+  if (requireAdmin && user.email !== 'toledomariajulieta.mpf@gmail.com') return <Navigate to="/" replace />;
   
   return <>{children}</>;
 }
@@ -61,10 +31,9 @@ function App() {
           <Navbar />
           <main className="flex-1 overflow-auto">
             <Routes>
+              <Route path="/" element={<TurnosPage />} />
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/" element={<ProtectedRoute><TurnosPage /></ProtectedRoute>} />
               <Route path="/agentes" element={<ProtectedRoute requireAdmin><AgentesPage /></ProtectedRoute>} />
-              <Route path="/accesos" element={<ProtectedRoute requireAdmin><ConfigAccesos /></ProtectedRoute>} />
             </Routes>
           </main>
         </div>

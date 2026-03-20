@@ -23,11 +23,4 @@ export interface Shift {
   horario_personalizado?: string;
 }
 
-export interface Profile {
-  id: string;
-  email: string;
-  nombre?: string;
-  estado: 'pendiente' | 'aprobado';
-  is_admin: boolean;
-  created_at: string;
-}
+

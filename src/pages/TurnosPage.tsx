@@ -9,8 +9,8 @@ import { useAuth } from "../contexts/AuthContext";
 import type { Agent, Shift, ShiftType } from "../types";
 
 export function TurnosPage() {
-  const { profile } = useAuth();
-  const isAdmin = profile?.is_admin === true;
+  const { user } = useAuth();
+  const isAdmin = user?.email === 'toledomariajulieta.mpf@gmail.com';
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [shifts, setShifts] = useState<Shift[]>([]);
