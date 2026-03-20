@@ -47,46 +47,45 @@ export function CalendarCell({
     return (
       <div
         key={blockLabel}
-        className={`flex items-start justify-between p-1.5 rounded-sm text-xs transition-colors ${
+        className={`flex flex-col gap-1.5 p-2 rounded-md transition-colors ${
           blockLabel === "Franco Compensatorio"
             ? "bg-red-50 border border-red-200"
             : blockLabel === "Trasnoche"
             ? "bg-blue-50 border border-blue-200"
-            : "bg-slate-50 border border-slate-100"
+            : "bg-slate-50 border border-slate-200"
         }`}
       >
-        <div className="flex items-center gap-1 w-[38%] pt-1">
+        <div className="flex items-center justify-between w-full">
           <span
-            className={`font-semibold ${
+            className={`font-bold text-[10px] sm:text-[11px] uppercase tracking-tight leading-none ${
               blockLabel === "Franco Compensatorio"
                 ? "text-red-700"
                 : blockLabel === "Trasnoche"
                 ? "text-blue-700"
-                : "text-slate-600"
-            } truncate`}
-            title={blockLabel}
+                : "text-slate-700"
+            }`}
           >
             {blockLabel}
           </span>
           <button
             onClick={() => setEditingBlock(isEditing ? null : blockLabel)}
-            className="text-slate-400 hover:text-blue-600 transition-colors p-0.5 rounded-full hover:bg-white"
+            className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-md hover:bg-white"
             title="Editar horario..."
           >
-            <Clock size={12} strokeWidth={2.5} />
+            <Clock size={13} strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col gap-1 ml-1">
+        <div className="w-full flex flex-col gap-1.5">
           <select
-            className="text-xs bg-white border border-slate-200 rounded p-1 outline-none text-slate-800 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full transition-shadow hover:border-slate-300"
+            className="text-xs font-medium bg-white border border-slate-300 rounded p-1.5 outline-none text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full transition-shadow hover:border-slate-400 shadow-sm"
             value={assigned?.agente_id || ""}
             onChange={(e) => {
               onAssignShift(date, blockLabel, e.target.value);
               setEditingBlock(null);
             }}
           >
-            <option value="">- Asignar -</option>
+            <option value="">- Sin asignar -</option>
             {agents.map((ag) => (
               <option key={ag.id} value={ag.id}>
                 {ag.nombre}
@@ -98,7 +97,7 @@ export function CalendarCell({
             <input
               type="text"
               placeholder="Ej. 07 a 14hs"
-              className="text-[10px] w-full border-b border-blue-300 bg-transparent outline-none pb-0.5 px-0.5 text-blue-700 placeholder:text-blue-300 transition-colors focus:border-blue-600"
+              className="text-[11px] w-full border-b-2 border-blue-400 bg-white shadow-inner rounded-t-sm outline-none px-1.5 py-1 text-blue-800 placeholder:text-blue-300 transition-colors focus:border-blue-600"
               value={localTimes[blockLabel] ?? (assigned?.horario_personalizado || "")}
               onChange={(e) =>
                 setLocalTimes({ ...localTimes, [blockLabel]: e.target.value })
@@ -113,11 +112,11 @@ export function CalendarCell({
           ) : (
             assigned?.horario_personalizado && (
               <span 
-                className="text-[10px] text-slate-500 flex items-center gap-1 px-1 cursor-pointer hover:text-blue-600 transition-colors"
+                className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 px-1 pb-0.5 cursor-pointer hover:text-blue-600 transition-colors"
                 onClick={() => setEditingBlock(blockLabel)}
                 title="Clic para editar"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-400/50"></div>
                 <span>{assigned.horario_personalizado}</span>
               </span>
             )

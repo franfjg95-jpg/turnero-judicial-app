@@ -127,43 +127,45 @@ export function TurnosPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        {/* Headers */}
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
-          {weekDaysHeaders.map(day => (
-            <div key={day} className="py-3 text-center text-sm font-semibold text-slate-600">
-              {day}
-            </div>
-          ))}
-        </div>
-        
-        {/* Grid de Días */}
-        <div className="grid grid-cols-7 bg-slate-200 gap-[1px] relative">
-          {loading && (
-            <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
-              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-            </div>
-          )}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
+        <div className="min-w-[1280px]">
+          {/* Headers */}
+          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+            {weekDaysHeaders.map(day => (
+              <div key={day} className="py-3 text-center text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                {day}
+              </div>
+            ))}
+          </div>
           
-          {daysInCalendar.map((day) => {
-            const isToday = isTodayFn(day);
-            const isWeekend = isWeekendFn(day);
-            const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+          {/* Grid de Días */}
+          <div className="grid grid-cols-7 bg-slate-200 gap-[1px] relative">
+            {loading && (
+              <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+              </div>
+            )}
+            
+            {daysInCalendar.map((day) => {
+              const isToday = isTodayFn(day);
+              const isWeekend = isWeekendFn(day);
+              const isCurrentMonth = day.getMonth() === currentDate.getMonth();
 
-            return (
-               <div key={day.toISOString()} className={`bg-white transition-opacity ${!isCurrentMonth ? 'opacity-40' : ''}`}>
-                 <CalendarCell 
-                   date={day}
-                   isToday={isToday}
-                   isWeekend={isWeekend}
-                   agents={agents}
-                   shifts={shifts}
-                   onAssignShift={handleAssignShift}
-                   onUpdateHorario={handleUpdateHorario}
-                 />
-               </div>
-            )
-          })}
+              return (
+                 <div key={day.toISOString()} className={`bg-white transition-opacity ${!isCurrentMonth ? 'opacity-40' : ''}`}>
+                   <CalendarCell 
+                     date={day}
+                     isToday={isToday}
+                     isWeekend={isWeekend}
+                     agents={agents}
+                     shifts={shifts}
+                     onAssignShift={handleAssignShift}
+                     onUpdateHorario={handleUpdateHorario}
+                   />
+                 </div>
+              )
+            })}
+          </div>
         </div>
       </div>
     </div>
