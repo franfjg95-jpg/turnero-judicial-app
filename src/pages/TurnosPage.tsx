@@ -139,7 +139,7 @@ export function TurnosPage() {
           </div>
           
           {/* Grid de Días */}
-          <div className="grid grid-cols-7 bg-slate-200 gap-[1px] relative">
+          <div className="grid grid-cols-7 border-l border-t border-slate-200 relative">
             {loading && (
               <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -152,7 +152,7 @@ export function TurnosPage() {
               const isCurrentMonth = day.getMonth() === currentDate.getMonth();
 
               return (
-                 <div key={day.toISOString()} className={`bg-white transition-opacity ${!isCurrentMonth ? 'opacity-40' : ''}`}>
+                 <div key={day.toISOString()} className={`transition-opacity h-full flex flex-col ${!isCurrentMonth ? 'opacity-40' : ''}`}>
                    <CalendarCell 
                      date={day}
                      isToday={isToday}

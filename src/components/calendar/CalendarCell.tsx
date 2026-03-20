@@ -47,12 +47,12 @@ export function CalendarCell({
     return (
       <div
         key={blockLabel}
-        className={`flex flex-col gap-1.5 p-2 rounded-md transition-colors ${
+        className={`flex flex-col gap-1.5 p-2 rounded-md transition-shadow ${
           blockLabel === "Franco Compensatorio"
             ? "bg-red-50 border border-red-200"
             : blockLabel === "Trasnoche"
             ? "bg-blue-50 border border-blue-200"
-            : "bg-slate-50 border border-slate-200"
+            : "bg-white border border-slate-200 shadow-sm hover:shadow-md"
         }`}
       >
         <div className="flex items-center justify-between w-full">
@@ -69,7 +69,7 @@ export function CalendarCell({
           </span>
           <button
             onClick={() => setEditingBlock(isEditing ? null : blockLabel)}
-            className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-md hover:bg-white"
+            className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-md hover:bg-slate-100"
             title="Editar horario..."
           >
             <Clock size={13} strokeWidth={2.5} />
@@ -78,7 +78,7 @@ export function CalendarCell({
 
         <div className="w-full flex flex-col gap-1.5">
           <select
-            className="text-xs font-medium bg-white border border-slate-300 rounded p-1.5 outline-none text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full transition-shadow hover:border-slate-400 shadow-sm"
+            className="text-xs font-medium bg-white border border-slate-200 rounded p-1.5 outline-none text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full transition-shadow hover:border-slate-300"
             value={assigned?.agente_id || ""}
             onChange={(e) => {
               onAssignShift(date, blockLabel, e.target.value);
@@ -97,7 +97,7 @@ export function CalendarCell({
             <input
               type="text"
               placeholder="Ej. 07 a 14hs"
-              className="text-[11px] w-full border-b-2 border-blue-400 bg-white shadow-inner rounded-t-sm outline-none px-1.5 py-1 text-blue-800 placeholder:text-blue-300 transition-colors focus:border-blue-600"
+              className="text-[11px] w-full border-b-2 border-blue-400 bg-slate-50 shadow-inner rounded-t-sm outline-none px-1.5 py-1 text-blue-800 placeholder:text-blue-300 transition-colors focus:border-blue-600"
               value={localTimes[blockLabel] ?? (assigned?.horario_personalizado || "")}
               onChange={(e) =>
                 setLocalTimes({ ...localTimes, [blockLabel]: e.target.value })
@@ -144,24 +144,26 @@ export function CalendarCell({
 
   return (
     <div
-      className={`min-h-[160px] bg-white border border-slate-200 p-2 flex flex-col gap-1.5 transition-all hover:shadow-md ${
-        isToday ? "ring-2 ring-blue-500 ring-inset" : ""
-      } ${isWeekend ? "bg-slate-50/50" : ""}`}
+      className={`min-h-[160px] h-full p-2.5 sm:p-3 flex flex-col gap-2 transition-all group ${
+        isToday ? "ring-2 ring-blue-500 ring-inset" : "border-r border-b border-slate-200"
+      } ${isWeekend ? "bg-slate-100" : "bg-slate-50"}`}
     >
-      <div className="flex justify-between items-center mb-1">
+      <div className="flex justify-between items-center mb-1.5 px-0.5">
         <span
-          className={`text-sm font-bold ${
-            isToday ? "text-blue-600" : "text-slate-700"
+          className={`text-[15px] font-extrabold ${
+            isToday ? "text-blue-600" : "text-slate-800"
           }`}
         >
           {format(date, "d")}
         </span>
-        <span className="text-[10px] text-slate-400 font-medium uppercase truncate w-16 text-right">
+        <span className={`text-[10px] font-bold uppercase tracking-wider truncate w-16 text-right ${
+          isWeekend ? "text-slate-500" : "text-slate-400"
+        }`}>
           {format(date, "EEEE")}
         </span>
       </div>
 
-      <div className="flex flex-col gap-1.5 flex-1 justify-start">
+      <div className="flex flex-col gap-2 flex-1 justify-start">
         {blocksToRender.map(renderBlock)}
       </div>
     </div>
