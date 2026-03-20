@@ -82,4 +82,24 @@ export const api = {
       if (error) throw error;
     },
   },
+  
+  getNotification: async () => {
+    const { data, error } = await supabase
+      .from("notificaciones")
+      .select("*")
+      .eq("id", 1)
+      .single();
+    if (error && error.code !== "PGRST116") throw error;
+    return data;
+  },
+
+  updateNotification: async (mensaje: string) => {
+    const { data, error } = await supabase
+      .from("notificaciones")
+      .upsert({ id: 1, mensaje })
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
 };

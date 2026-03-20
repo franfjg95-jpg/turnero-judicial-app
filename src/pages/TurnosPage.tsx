@@ -3,6 +3,7 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterv
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { CalendarCell } from "../components/calendar/CalendarCell";
+import { NotificationBanner } from "../components/calendar/NotificationBanner";
 import { api } from "../api/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import type { Agent, Shift, ShiftType } from "../types";
@@ -130,6 +131,8 @@ export function TurnosPage() {
           {error}
         </div>
       )}
+
+      <NotificationBanner />
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
         <div className="min-w-[1280px]">
