@@ -11,6 +11,7 @@ interface Props {
   onUpdateHorario: (date: Date, type: ShiftType, horario: string) => void;
   isToday: boolean;
   isWeekend: boolean;
+  isAdmin: boolean;
 }
 
 export function CalendarCell({
@@ -21,6 +22,7 @@ export function CalendarCell({
   onUpdateHorario,
   isToday,
   isWeekend,
+  isAdmin,
 }: Props) {
   const [editingBlock, setEditingBlock] = useState<ShiftType | null>(null);
   const [localTimes, setLocalTimes] = useState<{ [key: string]: string }>({});
@@ -33,7 +35,6 @@ export function CalendarCell({
       alert("Debes seleccionar un agente primero para guardar este horario personalizado.");
       return;
     }
-    // Only call update if it actually changed to avoid unnecessary DB calls (handled loosely here by just calling blur)
     if (assignedAgent) {
       onUpdateHorario(date, blockLabel, value);
     }
@@ -43,6 +44,7 @@ export function CalendarCell({
   const renderBlock = (blockLabel: ShiftType) => {
     const assigned = dayShifts.find((s) => s.tipo_turno === blockLabel);
     const isEditing = editingBlock === blockLabel;
+    const assignedAgentName = assigned ? agents.find(a => a.id === assigned.agente_id)?.nombre : null;
 
     return (
       <div
@@ -67,33 +69,41 @@ export function CalendarCell({
           >
             {blockLabel}
           </span>
-          <button
-            onClick={() => setEditingBlock(isEditing ? null : blockLabel)}
-            className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-md hover:bg-slate-100"
-            title="Editar horario..."
-          >
-            <Clock size={13} strokeWidth={2.5} />
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setEditingBlock(isEditing ? null : blockLabel)}
+              className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+              title="Editar horario..."
+            >
+              <Clock size={13} strokeWidth={2.5} />
+            </button>
+          )}
         </div>
 
         <div className="w-full flex flex-col gap-1.5">
-          <select
-            className="text-xs font-medium bg-white border border-slate-200 rounded p-1.5 outline-none text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full transition-shadow hover:border-slate-300"
-            value={assigned?.agente_id || ""}
-            onChange={(e) => {
-              onAssignShift(date, blockLabel, e.target.value);
-              setEditingBlock(null);
-            }}
-          >
-            <option value="">- Sin asignar -</option>
-            {agents.map((ag) => (
-              <option key={ag.id} value={ag.id}>
-                {ag.nombre}
-              </option>
-            ))}
-          </select>
+          {isAdmin ? (
+            <select
+              className="text-xs font-medium bg-white border border-slate-200 rounded p-1.5 outline-none text-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer w-full transition-shadow hover:border-slate-300"
+              value={assigned?.agente_id || ""}
+              onChange={(e) => {
+                onAssignShift(date, blockLabel, e.target.value);
+                setEditingBlock(null);
+              }}
+            >
+              <option value="">- Sin asignar -</option>
+              {agents.map((ag) => (
+                <option key={ag.id} value={ag.id}>
+                  {ag.nombre}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className={`text-xs font-semibold px-1 py-0.5 truncate ${assignedAgentName ? "text-slate-800" : "text-slate-400"}`}>
+              {assignedAgentName || "- Libre -"}
+            </div>
+          )}
 
-          {isEditing ? (
+          {isEditing && isAdmin ? (
             <input
               type="text"
               placeholder="Ej. 07 a 14hs"
@@ -112,9 +122,9 @@ export function CalendarCell({
           ) : (
             assigned?.horario_personalizado && (
               <span 
-                className="text-[11px] font-medium text-slate-500 flex items-center gap-1.5 px-1 pb-0.5 cursor-pointer hover:text-blue-600 transition-colors"
-                onClick={() => setEditingBlock(blockLabel)}
-                title="Clic para editar"
+                className={`text-[11px] font-medium text-slate-500 flex items-center gap-1.5 px-1 pb-0.5 ${isAdmin ? "cursor-pointer hover:text-blue-600" : ""}`}
+                onClick={() => isAdmin && setEditingBlock(blockLabel)}
+                title={isAdmin ? "Clic para editar" : ""}
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-400/50"></div>
                 <span>{assigned.horario_personalizado}</span>

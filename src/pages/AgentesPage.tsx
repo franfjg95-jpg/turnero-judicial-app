@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { Trash2, Edit2, Loader2 } from "lucide-react";
 import { api } from "../api/supabase";
 import type { Agent } from "../types";
+import { useAuth } from "../contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 
 export function AgentesPage() {
+  const { user } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -12,8 +15,10 @@ export function AgentesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAgents();
-  }, []);
+    if (user) loadAgents();
+  }, [user]);
+
+  if (!user) return <Navigate to="/" />;
 
   const loadAgents = async () => {
     try {

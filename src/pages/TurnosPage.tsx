@@ -4,9 +4,13 @@ import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { CalendarCell } from "../components/calendar/CalendarCell";
 import { api } from "../api/supabase";
+import { useAuth } from "../contexts/AuthContext";
 import type { Agent, Shift, ShiftType } from "../types";
 
 export function TurnosPage() {
+  const { user } = useAuth();
+  const isAdmin = !!user;
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -157,6 +161,7 @@ export function TurnosPage() {
                      date={day}
                      isToday={isToday}
                      isWeekend={isWeekend}
+                     isAdmin={isAdmin}
                      agents={agents}
                      shifts={shifts}
                      onAssignShift={handleAssignShift}
