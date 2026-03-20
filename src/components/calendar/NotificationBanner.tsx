@@ -64,9 +64,13 @@ export function NotificationBanner() {
       setConfirmModal(false);
       setSuccessToast(true);
       setTimeout(() => setSuccessToast(false), 3000);
-    } catch (err) {
-      console.error(err);
-      setErrorLine("Error al guardar en Supabase. Revisa tus permisos de administrador.");
+    } catch (err: any) {
+      // IMPRIMIR EL ERROR MÁS DETALLADO POSIBLE EN LA CONSOLA PARA DEPURAR
+      console.error("=== ERROR DETALLADO AL GUARDAR ===");
+      console.dir(err);
+      console.log(JSON.stringify(err, null, 2));
+      
+      setErrorLine("Error detectado. Por favor, abre la Consola (F12) para ver los detalles.");
     } finally {
       setSaving(false);
     }

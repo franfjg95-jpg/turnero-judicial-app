@@ -96,10 +96,14 @@ export const api = {
   updateNotification: async (mensaje: string) => {
     const { data, error } = await supabase
       .from("notificaciones")
-      .upsert({ id: 1, mensaje })
+      .update({ mensaje })
+      .eq("id", 1)
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error("Error original de Supabase (API):", error);
+      throw error;
+    }
     return data;
   },
 };
