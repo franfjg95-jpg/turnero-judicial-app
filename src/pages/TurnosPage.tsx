@@ -105,22 +105,22 @@ export function TurnosPage() {
   const weekDaysHeaders = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
   return (
-    <div className="max-w-[1600px] mx-auto p-4 sm:p-6 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="w-full max-w-screen-2xl mx-auto p-2 sm:p-4 xl:p-6 space-y-3 sm:space-y-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             Calendario Mensual
           </h1>
-          <p className="text-slate-500 mt-1">Gestión de turnos y guardias operativas</p>
+          <p className="text-sm sm:text-base text-slate-500 mt-0.5 sm:mt-1">Gestión de turnos y guardias operativas</p>
         </div>
-        <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
-          <button onClick={prevMonth} disabled={loading} className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 disabled:opacity-50">
+        <div className="flex items-center justify-between sm:justify-center w-full sm:w-auto gap-2 sm:gap-4 bg-white px-3 sm:px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+          <button onClick={prevMonth} disabled={loading} className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 disabled:opacity-50">
             <ChevronLeft size={20} />
           </button>
-          <span className="font-semibold text-slate-700 min-w-[160px] text-center capitalize text-lg">
+          <span className="font-semibold text-slate-700 min-w-[120px] sm:min-w-[160px] text-center capitalize text-base sm:text-lg">
             {format(currentDate, "MMMM yyyy", { locale: es })}
           </span>
-          <button onClick={nextMonth} disabled={loading} className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 disabled:opacity-50">
+          <button onClick={nextMonth} disabled={loading} className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 disabled:opacity-50">
             <ChevronRight size={20} />
           </button>
         </div>
@@ -135,7 +135,7 @@ export function TurnosPage() {
       <NotificationBanner />
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-        <div className="min-w-[1280px]">
+        <div className="min-w-[800px] xl:min-w-[1024px]">
           {/* Headers */}
           <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
             {weekDaysHeaders.map(day => (
@@ -148,7 +148,7 @@ export function TurnosPage() {
           {/* Grid de Días */}
           <div className="grid grid-cols-7 border-l border-t border-slate-200 relative">
             {loading && (
-              <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center">
+              <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
               </div>
             )}

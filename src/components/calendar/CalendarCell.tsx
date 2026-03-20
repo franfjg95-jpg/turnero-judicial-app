@@ -102,17 +102,17 @@ export function CalendarCell({
     return (
       <div
         key={blockLabel}
-        className={`flex flex-col gap-1.5 p-2 rounded-md transition-shadow border ${
+        className={`flex flex-col gap-1 xl:gap-1.5 p-1.5 xl:p-2 rounded-md border ${
           blockLabel === "Franco Compensatorio"
-            ? "bg-red-50 border-red-400"
+            ? "bg-red-50 border-red-300"
             : blockLabel === "Trasnoche"
-            ? "bg-blue-50 border-blue-400"
-            : "bg-white border-slate-400 shadow-sm hover:shadow-md"
+            ? "bg-blue-50 border-blue-300"
+            : "bg-white border-slate-300"
         }`}
       >
         <div className="flex items-center justify-between w-full">
           <span
-            className={`font-bold text-[10px] sm:text-[11px] uppercase tracking-tight leading-none flex items-center gap-1 ${
+            className={`font-bold text-[9px] xl:text-[11px] uppercase tracking-tight leading-none flex items-center gap-1 ${
               blockLabel === "Franco Compensatorio"
                 ? "text-red-700"
                 : blockLabel === "Trasnoche"
@@ -120,25 +120,25 @@ export function CalendarCell({
                 : "text-slate-700"
             }`}
           >
-            {blockLabel}
-            {isSaving && <Loader2 size={10} className="animate-spin text-blue-500" />}
+            <span className="truncate max-w-[55px] xl:max-w-max">{blockLabel}</span>
+            {isSaving && <Loader2 size={10} className="animate-spin text-blue-500 shrink-0" />}
           </span>
           {isAdmin && (
             <button
               onClick={() => setEditingBlock(isEditing ? null : blockLabel)}
-              className="text-slate-400 hover:text-blue-600 transition-colors p-1 rounded-md hover:bg-slate-100"
+              className="text-slate-400 hover:text-blue-600 p-0.5 xl:p-1 rounded-md hover:bg-slate-100"
               title="Editar horario..."
             >
-              <Clock size={13} strokeWidth={2.5} />
+              <Clock size={12} strokeWidth={2.5} />
             </button>
           )}
         </div>
 
-        <div className="w-full flex flex-col gap-1.5">
+        <div className="w-full flex flex-col gap-1 xl:gap-1.5">
           {isAdmin ? (
             <select
               disabled={isSaving}
-              className={`text-xs font-medium bg-white border border-slate-200 rounded p-1.5 outline-none text-slate-800 transition-all ${isSaving ? 'opacity-50 cursor-wait' : 'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer hover:border-slate-300'}`}
+              className={`text-[10px] xl:text-xs font-medium bg-white border border-slate-200 rounded p-1 xl:p-1.5 outline-none text-slate-800 ${isSaving ? 'opacity-50 cursor-wait' : 'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer hover:border-slate-300'}`}
               value={assigned?.agente_id || ""}
               onChange={(e) => handleAssign(blockLabel, e.target.value)}
             >
@@ -150,7 +150,7 @@ export function CalendarCell({
               ))}
             </select>
           ) : (
-            <div className={`text-xs font-semibold px-1 py-0.5 truncate ${assignedAgentName ? "text-slate-800" : "text-slate-400"}`}>
+            <div className={`text-[10px] xl:text-xs font-semibold px-0.5 xl:px-1 py-0.5 truncate ${assignedAgentName ? "text-slate-800" : "text-slate-400"}`}>
               {assignedAgentName || "- Libre -"}
             </div>
           )}
@@ -159,7 +159,7 @@ export function CalendarCell({
             <input
               type="text"
               placeholder="Ej. 07 a 14hs"
-              className="text-[11px] w-full border-b-2 border-blue-400 bg-slate-50 shadow-inner rounded-t-sm outline-none px-1.5 py-1 text-blue-800 placeholder:text-blue-300 transition-colors focus:border-blue-600"
+              className="text-[10px] xl:text-[11px] w-full border-b-2 border-blue-400 bg-slate-50 shadow-inner rounded-t-sm outline-none px-1 xl:px-1.5 py-0.5 xl:py-1 text-blue-800 placeholder:text-blue-300 focus:border-blue-600"
               value={localTimes[blockLabel] ?? (assigned?.horario_personalizado || "")}
               onChange={(e) =>
                 setLocalTimes({ ...localTimes, [blockLabel]: e.target.value })
@@ -174,12 +174,12 @@ export function CalendarCell({
           ) : (
             assigned?.horario_personalizado && (
               <span 
-                className={`text-[11px] font-medium text-slate-500 flex items-center gap-1.5 px-1 pb-0.5 ${isAdmin ? "cursor-pointer hover:text-blue-600" : ""}`}
+                className={`text-[9px] xl:text-[11px] font-medium text-slate-500 flex items-center gap-1 px-0.5 xl:px-1 pb-0.5 ${isAdmin ? "cursor-pointer hover:text-blue-600" : ""}`}
                 onClick={() => isAdmin && setEditingBlock(blockLabel)}
                 title={isAdmin ? "Clic para editar" : ""}
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400/50"></div>
-                <span>{assigned.horario_personalizado}</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-400/50 shrink-0"></div>
+                <span className="truncate">{assigned.horario_personalizado}</span>
               </span>
             )
           )}
@@ -199,54 +199,54 @@ export function CalendarCell({
   return (
     <>
       <div
-        className={`min-h-[160px] h-full p-2.5 sm:p-3 flex flex-col gap-2 transition-all group ${
+        className={`min-h-[140px] xl:min-h-[180px] h-full p-1.5 xl:p-3 flex flex-col gap-1.5 transition-colors group ${
           isToday ? "ring-2 ring-blue-500 ring-inset" : "border-r border-b border-slate-200"
         } ${isWeekend ? "bg-slate-100" : "bg-slate-50"}`}
       >
-        <div className="flex justify-between items-center mb-1.5 px-0.5">
+        <div className="flex justify-between items-center mb-1 px-0.5">
           <span
-            className={`text-[15px] font-extrabold ${
+            className={`text-sm xl:text-[15px] font-extrabold ${
               isToday ? "text-blue-600" : "text-slate-800"
             }`}
           >
             {format(date, "d")}
           </span>
-          <span className={`text-[10px] font-bold uppercase tracking-wider truncate w-16 text-right ${
+          <span className={`text-[9px] xl:text-[10px] font-bold uppercase tracking-wider truncate w-16 text-right ${
             isWeekend ? "text-slate-500" : "text-slate-400"
           }`}>
             {format(date, "EEEE")}
           </span>
         </div>
 
-        <div className="flex flex-col gap-2 flex-1 justify-start">
+        <div className="flex flex-col gap-1.5 xl:gap-2 flex-1 justify-start">
           {blocksToRender.map(renderBlock)}
         </div>
       </div>
 
       {confirmModal && confirmModal.isOpen && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
           onClick={() => setConfirmModal(null)}
         >
           <div 
-            className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full outline outline-1 outline-slate-200 transform animate-in scale-in-95 duration-200"
+            className="bg-white rounded-xl shadow-lg border border-slate-200 p-5 xl:p-6 max-w-sm w-full transform animate-in scale-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-lg font-bold text-slate-800 mb-2">¿Confirmar Cambio de Turno?</h3>
-            <p className="text-slate-600 text-sm mb-6 leading-relaxed">
+            <h3 className="text-base xl:text-lg font-bold text-slate-800 mb-2">¿Confirmar Cambio de Turno?</h3>
+            <p className="text-slate-600 text-xs xl:text-sm mb-5 leading-relaxed">
               Ya hay un agente asignado. ¿Deseas modificarlo por <span className="font-bold text-slate-800">{confirmModal.newAgentName}</span>?
             </p>
             
-            <div className="flex justify-end gap-3 font-medium text-sm">
+            <div className="flex justify-end gap-2 xl:gap-3 font-medium text-xs xl:text-sm">
               <button 
                 onClick={() => setConfirmModal(null)}
-                className="px-4 py-2 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+                className="px-3 xl:px-4 py-1.5 xl:py-2 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
               >
                 Cancelar
               </button>
               <button 
                 onClick={() => executeAssign(confirmModal.blockLabel, confirmModal.newAgentId)}
-                className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 shadow-sm transition-colors"
+                className="px-3 xl:px-4 py-1.5 xl:py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
               >
                 SÍ, Confirmar
               </button>
