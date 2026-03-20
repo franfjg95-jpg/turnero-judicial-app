@@ -1,18 +1,10 @@
+export type ShiftType = 'mañana' | 'tarde' | 'noche' | 'Mañana' | 'Tarde' | 'Noche' | 'Trasnoche' | 'Franco Compensatorio';
+
 export interface Agent {
   id: string;
   nombre: string;
   puesto: string;
 }
-
-export type ShiftType =
-  | "Trasnoche"
-  | "Mañana"
-  | "Tarde"
-  | "Noche"
-  | "Franco Compensatorio"
-  // Adicionales sugeridos por la imagen:
-  | "10:00 a 16:00"
-  | "18:00 a 00:00";
 
 export interface Shift {
   id?: string;
@@ -23,4 +15,11 @@ export interface Shift {
   horario_personalizado?: string;
 }
 
-
+export interface Profile {
+  id: string;
+  email: string;
+  nombre?: string;
+  estado: 'pendiente' | 'aprobado';
+  is_admin: boolean;
+  created_at: string;
+}

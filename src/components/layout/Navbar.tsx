@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Users, Scale, LogIn, LogOut } from "lucide-react";
+import { Calendar, Users, Scale, LogIn, LogOut, ShieldCheck } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../contexts/AuthContext";
 
 export function Navbar() {
   const location = useLocation();
-  const { user, signOut } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
-  const isAdmin = user?.email === 'toledomariajulieta.mpf@gmail.com';
+  const isAdmin = user?.email === 'toledomariajulieta.mpf@gmail.com' || profile?.is_admin === true;
 
   useEffect(() => {
     if (!showLogoutModal) return;
@@ -45,32 +45,49 @@ export function Navbar() {
             </div>
 
             <nav className="flex items-center space-x-2 sm:space-x-4">
-              <Link
-                to="/"
-                className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors",
-                  location.pathname === "/"
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                )}
-              >
-                <Calendar size={18} />
-                <span className="hidden sm:inline">Turnos</span>
-              </Link>
-              
-              {isAdmin && (
+              {user && profile?.estado === 'aprobado' && (
                 <Link
-                  to="/agentes"
+                  to="/"
                   className={cn(
                     "flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors",
-                    location.pathname === "/agentes"
+                    location.pathname === "/"
                       ? "bg-blue-50 text-blue-700"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   )}
                 >
-                  <Users size={18} />
-                  <span className="hidden sm:inline">Personal</span>
+                  <Calendar size={18} />
+                  <span className="hidden sm:inline">Turnos</span>
                 </Link>
+              )}
+              
+              {isAdmin && (
+                <>
+                  <Link
+                    to="/agentes"
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors",
+                      location.pathname === "/agentes"
+                        ? "bg-blue-50 text-blue-700"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    )}
+                  >
+                    <Users size={18} />
+                    <span className="hidden sm:inline">Personal</span>
+                  </Link>
+                  <Link
+                    to="/accesos"
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors border border-transparent",
+                      location.pathname === "/accesos"
+                        ? "bg-amber-50 text-amber-700 border-amber-200"
+                        : "text-amber-600 hover:bg-amber-50 hover:text-amber-800"
+                    )}
+                    title="Aprobar usuarios pendientes"
+                  >
+                    <ShieldCheck size={18} />
+                    <span className="hidden sm:inline">Accesos</span>
+                  </Link>
+                </>
               )}
 
               {!user ? (
@@ -80,7 +97,7 @@ export function Navbar() {
                     className="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm text-blue-600 hover:bg-blue-50 transition-colors ml-4 border border-blue-200"
                   >
                     <LogIn size={18} />
-                    <span className="hidden sm:inline">Acceso Admin</span>
+                    <span className="hidden sm:inline">Ingresar</span>
                   </Link>
                 )
               ) : (

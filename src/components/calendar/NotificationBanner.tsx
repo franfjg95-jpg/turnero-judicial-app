@@ -4,8 +4,8 @@ import { api } from "../../api/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 
 export function NotificationBanner() {
-  const { user } = useAuth();
-  const isAdmin = user?.email === 'toledomariajulieta.mpf@gmail.com';
+  const { user, profile } = useAuth();
+  const isAdmin = user?.email === 'toledomariajulieta.mpf@gmail.com' || profile?.is_admin === true;
 
   const [message, setMessage] = useState("Cargando notificaciones...");
   const [isEditing, setIsEditing] = useState(false);
