@@ -9,8 +9,6 @@ export type ShiftType =
   | "Mañana"
   | "Tarde"
   | "Noche"
-  | "Finde Sábado"
-  | "Finde Domingo"
   | "Franco Compensatorio"
   // Adicionales sugeridos por la imagen:
   | "10:00 a 16:00"

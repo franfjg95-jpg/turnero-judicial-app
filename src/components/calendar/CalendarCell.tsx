@@ -126,21 +126,13 @@ export function CalendarCell({
     );
   };
 
-  const weekdayBlocks: ShiftType[] = [
+  const blocksToRender: ShiftType[] = [
     "Mañana",
     "Tarde",
     "Noche",
     "Trasnoche",
     "Franco Compensatorio",
   ];
-  const weekendBlocks: ShiftType[] = [
-    "Finde Sábado",
-    "Finde Domingo",
-    "Trasnoche",
-    "Franco Compensatorio",
-  ];
-
-  const blocksToRender = isWeekend ? weekendBlocks : weekdayBlocks;
 
   return (
     <div
