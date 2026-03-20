@@ -47,12 +47,12 @@ export function CalendarCell({
     return (
       <div
         key={blockLabel}
-        className={`flex flex-col gap-1.5 p-2 rounded-md transition-shadow ${
+        className={`flex flex-col gap-1.5 p-2 rounded-md transition-shadow border ${
           blockLabel === "Franco Compensatorio"
-            ? "bg-red-50 border border-red-200"
+            ? "bg-red-50 border-red-400"
             : blockLabel === "Trasnoche"
-            ? "bg-blue-50 border border-blue-200"
-            : "bg-white border border-slate-200 shadow-sm hover:shadow-md"
+            ? "bg-blue-50 border-blue-400"
+            : "bg-white border-slate-400 shadow-sm hover:shadow-md"
         }`}
       >
         <div className="flex items-center justify-between w-full">
