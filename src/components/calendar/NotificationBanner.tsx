@@ -15,6 +15,7 @@ export function NotificationBanner() {
   const [saving, setSaving] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
   const [errorLine, setErrorLine] = useState("");
+  const [successToast, setSuccessToast] = useState(false);
 
   useEffect(() => {
     loadNotification();
@@ -61,6 +62,8 @@ export function NotificationBanner() {
       setMessage(editValue);
       setIsEditing(false);
       setConfirmModal(false);
+      setSuccessToast(true);
+      setTimeout(() => setSuccessToast(false), 3000);
     } catch (err) {
       console.error(err);
       setErrorLine("Error al guardar en Supabase. Revisa tus permisos de administrador.");
@@ -166,6 +169,13 @@ export function NotificationBanner() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {successToast && (
+        <div className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 bg-green-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2 animate-in slide-in-from-bottom-6 fade-in duration-300 z-[110]">
+          <Check size={18} />
+          <span className="text-sm font-semibold">Notificación actualizada</span>
         </div>
       )}
     </>
