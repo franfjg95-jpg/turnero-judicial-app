@@ -83,7 +83,7 @@ export function TurnosPage() {
       // Recargar para tener el estado real de la DB sin recargar toda la pag asíncronamente
       await loadData();
     } catch (err: any) {
-      alert("Error al actualizar turno: " + err.message);
+      setError("Error al actualizar turno: " + err.message);
     }
   };
 
@@ -98,7 +98,7 @@ export function TurnosPage() {
       const shiftsData = await api.shifts.getByDateRange(sDateStr, eDateStr);
       setShifts(shiftsData);
     } catch (err: any) {
-      alert("Error al guardar el horario personalizado: " + err.message);
+      setError("Error al guardar el horario personalizado: " + err.message);
     }
   }
 

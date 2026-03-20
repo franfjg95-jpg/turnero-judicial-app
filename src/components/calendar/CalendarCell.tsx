@@ -49,7 +49,10 @@ export function CalendarCell({
 
   const handleBlur = (blockLabel: ShiftType, assignedAgent: string | undefined, value: string) => {
     if (!assignedAgent && value.trim() !== "") {
-      alert("Debes seleccionar un agente primero para guardar este horario personalizado.");
+      const newLocalTimes = { ...localTimes };
+      delete newLocalTimes[blockLabel];
+      setLocalTimes(newLocalTimes);
+      setEditingBlock(null);
       return;
     }
     if (assignedAgent) {
