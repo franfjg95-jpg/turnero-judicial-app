@@ -1,8 +1,33 @@
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import type { Agent, Shift, ShiftType, Profile } from "../types";
 
 export const api = {
   auth: {
+    async inviteUser(email: string, nombre: string): Promise<void> {
+      const isolatedClient = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
+      );
+      
+      const { data, error } = await isolatedClient.auth.signUp({
+        email,
+        password: 'UJ123456'
+      });
+      if (error) throw error;
+      
+      if (data?.user) {
+        const { error: profileError } = await supabase.from('perfiles').insert({
+          id: data.user.id,
+          email,
+          nombre,
+          estado: 'aprobado',
+          is_admin: false
+        });
+        if (profileError) throw profileError;
+      }
+    },
     async getProfile(id: string): Promise<Profile> {
       const { data, error } = await supabase.from('perfiles').select('*').eq('id', id).single();
       if (error) throw error;
