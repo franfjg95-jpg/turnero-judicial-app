@@ -23,76 +23,79 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Correos con acceso ADMIN garantizado
+  // Correos con acceso ADMIN garantizado — BYPASS TOTAL, sin consultar DB
   const ADMIN_EMAILS = [
     'franfjg95@gmail.com',
     'toledomariajulieta.mpf@gmail.com'
   ];
 
   const loadProfile = async (currentUser: User) => {
-    const email = currentUser.email || '';
-    const isWhitelistedAdmin = ADMIN_EMAILS.includes(email.toLowerCase());
+    const email = (currentUser.email || '').toLowerCase().trim();
+    const isWhitelistedAdmin = ADMIN_EMAILS.includes(email);
 
+    // ============ BYPASS TOTAL para admins whitelisted ============
+    if (isWhitelistedAdmin) {
+      const adminProfile: Profile = {
+        id: currentUser.id,
+        email: email,
+        nombre: email.split('@')[0] || 'Admin',
+        estado: 'aprobado',
+        is_admin: true
+      } as Profile;
+      setProfile(adminProfile);
+
+      // Intentar sincronizar con DB en background (no bloqueante)
+      (async () => {
+        try {
+          await supabase.from('perfiles').upsert({
+            id: currentUser.id,
+            email: email,
+            nombre: email.split('@')[0] || 'Admin',
+            estado: 'aprobado',
+            is_admin: true
+          }, { onConflict: 'id' });
+          console.log('Admin profile synced to DB');
+        } catch {
+          console.warn('Could not sync admin profile to DB (non-blocking)');
+        }
+      })();
+
+      return; // SALIR INMEDIATAMENTE, no tocar más nada
+    }
+
+    // ============ Lógica normal para usuarios NO whitelisted ============
     try {
       let prof: Profile | null = null;
 
-      // 1. Intentar cargar por ID
       try {
         prof = await api.auth.getProfile(currentUser.id);
-      } catch (err) {
-        console.warn("No se encontró perfil por ID, buscando por email...");
+      } catch {
+        console.warn("Perfil no encontrado por ID");
       }
 
-      // 2. Si no se encontró por ID, buscar por email
       if (!prof) {
         const { data: byEmail } = await supabase.from('perfiles').select('*').eq('email', email).maybeSingle();
         if (byEmail) {
           prof = byEmail;
-          // Corregir ID silenciosamente
-          try { await supabase.from('perfiles').update({ id: currentUser.id }).eq('email', email); } catch {}
         }
       }
 
-      // 3. Si aún no existe, auto-crear perfil
       if (!prof) {
         const newProf = {
           id: currentUser.id,
           email: email,
           nombre: email.split('@')[0] || 'Usuario',
-          estado: 'aprobado' as const,
-          is_admin: isWhitelistedAdmin
+          estado: 'pendiente' as const,
+          is_admin: false
         };
         try { await supabase.from('perfiles').insert([newProf]); } catch {}
         prof = newProf as unknown as Profile;
       }
 
-      // 4. Si es un admin whitelisted, forzar estado y rol sin importar lo que diga la DB
-      if (isWhitelistedAdmin && prof) {
-        if (prof.estado !== 'aprobado' || !prof.is_admin) {
-          prof = { ...prof, estado: 'aprobado', is_admin: true };
-          try {
-            await supabase.from('perfiles')
-              .update({ estado: 'aprobado', is_admin: true })
-              .eq('id', currentUser.id);
-          } catch {}
-        }
-      }
-
       setProfile(prof);
     } catch (e) {
       console.error("Error loading profile:", e);
-      // Fallback de emergencia para admins whitelisted
-      if (isWhitelistedAdmin) {
-        setProfile({
-          id: currentUser.id,
-          email: email,
-          nombre: email.split('@')[0] || 'Admin',
-          estado: 'aprobado',
-          is_admin: true
-        } as Profile);
-      } else {
-        setProfile(null);
-      }
+      setProfile(null);
     }
   };
 
