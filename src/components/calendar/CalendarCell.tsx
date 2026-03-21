@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
-import { Clock, Loader2 } from "lucide-react";
+import { es } from "date-fns/locale";
+import { Loader2, X, Search } from "lucide-react";
 import { type ShiftType, type Agent, type Shift } from "../../types";
 
 interface Props {
@@ -8,7 +9,8 @@ interface Props {
   agents: Agent[];
   shifts: Shift[];
   onAssignShift: (date: Date, type: ShiftType, agentId: string) => Promise<void>;
-  onUpdateHorario: (date: Date, type: ShiftType, horario: string) => void;
+  onRemoveAgent: (date: Date, type: ShiftType, agentId: string, shiftId?: string) => Promise<void>;
+  onUpdateHorarioTurno: (date: Date, type: ShiftType, horario: string) => Promise<void>;
   isToday: boolean;
   isWeekend: boolean;
   isAdmin: boolean;
@@ -19,90 +21,81 @@ export function CalendarCell({
   agents,
   shifts,
   onAssignShift,
-  onUpdateHorario,
+  onRemoveAgent,
+  onUpdateHorarioTurno,
   isToday,
   isWeekend,
   isAdmin,
 }: Props) {
-  const [editingBlock, setEditingBlock] = useState<ShiftType | null>(null);
-  const [localTimes, setLocalTimes] = useState<{ [key: string]: string }>({});
   const [loadingBlock, setLoadingBlock] = useState<ShiftType | null>(null);
   
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    blockLabel: ShiftType;
-    newAgentId: string;
-    newAgentName: string;
-  } | null>(null);
-
-  useEffect(() => {
-    if (!confirmModal?.isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setConfirmModal(null);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [confirmModal]);
+  // Custom Select states
+  const [openSelect, setOpenSelect] = useState<ShiftType | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
   const dateStr = format(date, "yyyy-MM-dd");
-  const dayShifts = shifts.filter((s) => s.fecha === dateStr);
-
-  const handleBlur = (blockLabel: ShiftType, assignedAgent: string | undefined, value: string) => {
-    if (!assignedAgent && value.trim() !== "") {
-      const newLocalTimes = { ...localTimes };
-      delete newLocalTimes[blockLabel];
-      setLocalTimes(newLocalTimes);
-      setEditingBlock(null);
-      return;
-    }
-    if (assignedAgent) {
-      onUpdateHorario(date, blockLabel, value);
-    }
-    setEditingBlock(null);
-  };
-
+  const dayShifts = useMemo(() => shifts.filter((s) => s.fecha === dateStr), [shifts, dateStr]);
+  
+  const [localSchedules, setLocalSchedules] = useState<Record<string, string>>({});
+  
+  const [deleteModal, setDeleteModal] = useState<{
+    blockLabel: ShiftType;
+    agentIdToRemove: string;
+    agentName: string;
+    shiftIdToRemove?: string;
+  } | null>(null);
+  
+  useEffect(() => {
+    const schedules: Record<string, string> = {};
+    dayShifts.forEach(s => {
+      schedules[s.tipo_turno] = s.horario_personalizado || "";
+    });
+    setLocalSchedules(schedules);
+  }, [dayShifts]);
+  
   const handleAssign = async (blockLabel: ShiftType, newAgentId: string) => {
-    const assigned = dayShifts.find((s) => s.tipo_turno === blockLabel);
+    if (!newAgentId) return;
     
-    // Ignorar si elige el mismo
-    if (assigned?.agente_id === newAgentId) return;
+    const assignedShifts = dayShifts.filter((s) => s.tipo_turno === blockLabel);
+    const assignedIds = assignedShifts.map(s => s.agente_id).filter(Boolean);
 
-    // Confirmar si ya hay alguien y lo va a cambiar/quitar
-    if (assigned && assigned.agente_id) {
-       const newAgentName = newAgentId ? agents.find(a => a.id === newAgentId)?.nombre : "Libre (Sin asignar)";
-       setConfirmModal({
-         isOpen: true,
-         blockLabel,
-         newAgentId,
-         newAgentName: newAgentName || ""
-       });
-       return;
-    }
+    if (assignedIds.includes(newAgentId)) return;
+    if (assignedIds.length >= 6) return;
 
-    await executeAssign(blockLabel, newAgentId);
-  };
-
-  const executeAssign = async (blockLabel: ShiftType, newAgentId: string) => {
     setLoadingBlock(blockLabel);
     try {
       await onAssignShift(date, blockLabel, newAgentId);
-      setEditingBlock(null);
     } finally {
       setLoadingBlock(null);
-      setConfirmModal(null);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal) return;
+    setLoadingBlock(deleteModal.blockLabel);
+    const { blockLabel, agentIdToRemove, shiftIdToRemove } = deleteModal;
+    setDeleteModal(null);
+    try {
+      await onRemoveAgent(date, blockLabel, agentIdToRemove, shiftIdToRemove);
+    } finally {
+      setLoadingBlock(null);
     }
   };
 
   const renderBlock = (blockLabel: ShiftType) => {
-    const assigned = dayShifts.find((s) => s.tipo_turno === blockLabel);
-    const isEditing = editingBlock === blockLabel;
-    const assignedAgentName = assigned ? agents.find(a => a.id === assigned.agente_id)?.nombre : null;
+    const assignedShifts = dayShifts.filter((s) => s.tipo_turno === blockLabel);
+    
+    const assignedIds = assignedShifts.map(s => s.agente_id).filter(Boolean);
+    const assignedAgents = assignedIds.map(id => agents.find(a => a.id === id)).filter(Boolean);
+    
     const isSaving = loadingBlock === blockLabel;
+    const currentHorario = assignedShifts.length > 0 ? (assignedShifts[0].horario_personalizado || "") : "";
 
     return (
       <div
         key={blockLabel}
-        className={`flex flex-col gap-1 xl:gap-1.5 p-1.5 xl:p-2 rounded-md border ${
+        className={`flex flex-col gap-1.5 p-1.5 xl:p-2.5 rounded-md border min-h-[50px] ${
           blockLabel === "Franco Compensatorio"
             ? "bg-red-50 border-red-300"
             : blockLabel === "Trasnoche"
@@ -110,79 +103,172 @@ export function CalendarCell({
             : "bg-white border-slate-300"
         }`}
       >
-        <div className="flex items-center justify-between w-full">
+        <div className={`flex items-center w-full mb-0.5 ${blockLabel === "Franco Compensatorio" ? "justify-center text-center" : "justify-between"}`}>
           <span
-            className={`font-bold text-[9px] xl:text-[11px] uppercase tracking-tight leading-none flex items-center gap-1 ${
+            className={`font-bold text-[10px] xl:text-xs uppercase tracking-tight flex items-center ${
               blockLabel === "Franco Compensatorio"
-                ? "text-red-700"
+                ? "text-red-700 w-full justify-center"
                 : blockLabel === "Trasnoche"
-                ? "text-blue-700"
-                : "text-slate-700"
+                ? "text-blue-700 gap-1"
+                : "text-slate-700 gap-1"
             }`}
           >
-            <span className="truncate max-w-[55px] xl:max-w-max">{blockLabel}</span>
-            {isSaving && <Loader2 size={10} className="animate-spin text-blue-500 shrink-0" />}
+            <span className={blockLabel === "Franco Compensatorio" ? "" : "truncate"}>{blockLabel}</span>
+            
+            {blockLabel !== "Franco Compensatorio" && (
+              isAdmin && assignedAgents.length > 0 ? (
+                <input
+                   type="text"
+                   maxLength={10}
+                   placeholder="ej: 07-13 hs"
+                   className="ml-0.5 xl:ml-1 w-20 text-[9px] xl:text-[10px] bg-transparent outline-none border-b border-dashed border-slate-300 focus:border-blue-400 font-medium placeholder:text-slate-300 text-slate-600 px-0.5 capitalize tracking-normal"
+                   value={localSchedules[blockLabel] ?? currentHorario}
+                   onChange={(e) => setLocalSchedules({...localSchedules, [blockLabel]: e.target.value})}
+                   onBlur={(e) => {
+                     const val = e.target.value.trim();
+                     if (val !== currentHorario) {
+                       onUpdateHorarioTurno(date, blockLabel, val);
+                     }
+                   }}
+                   onKeyDown={(e) => {
+                      if (e.key === 'Enter') e.currentTarget.blur();
+                   }}
+                />
+              ) : (
+                 currentHorario && (
+                   <span className="ml-0.5 xl:ml-1 text-[9px] xl:text-[10px] font-semibold text-slate-500 lowercase tracking-normal flex-shrink-0">
+                     ({currentHorario})
+                   </span>
+                 )
+              )
+            )}
+
+            {isSaving && <Loader2 size={12} className="animate-spin text-blue-500 shrink-0 ml-1" />}
           </span>
-          {isAdmin && (
-            <button
-              onClick={() => setEditingBlock(isEditing ? null : blockLabel)}
-              className="text-slate-400 hover:text-blue-600 p-0.5 xl:p-1 rounded-md hover:bg-slate-100"
-              title="Editar horario..."
-            >
-              <Clock size={12} strokeWidth={2.5} />
-            </button>
-          )}
         </div>
 
-        <div className="w-full flex flex-col gap-1 xl:gap-1.5">
-          {isAdmin ? (
-            <select
-              disabled={isSaving}
-              className={`text-[10px] xl:text-xs font-medium bg-white border border-slate-200 rounded p-1 xl:p-1.5 outline-none text-slate-800 ${isSaving ? 'opacity-50 cursor-wait' : 'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 cursor-pointer hover:border-slate-300'}`}
-              value={assigned?.agente_id || ""}
-              onChange={(e) => handleAssign(blockLabel, e.target.value)}
-            >
-              <option value="">- Sin asignar -</option>
-              {agents.map((ag) => (
-                <option key={ag.id} value={ag.id}>
-                  {ag.nombre}
-                </option>
+        <div className="w-full flex flex-col gap-1.5">
+          {assignedAgents.length > 0 ? (
+            <div className="flex flex-col gap-1 w-full mt-1">
+              {assignedAgents.map((ag) => (
+                <div key={ag?.id} className={`flex items-center justify-between text-[11px] xl:text-[13px] font-semibold px-2 py-1 bg-white rounded shadow-sm border ${isAdmin ? "border-slate-300" : "border-slate-200"}`}>
+                  <span className="truncate text-slate-800 leading-tight" title={ag?.nombre}>{ag?.nombre}</span>
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const shiftRow = assignedShifts.find(s => s.agente_id === ag!.id);
+                        setDeleteModal({
+                          blockLabel,
+                          agentIdToRemove: ag!.id,
+                          agentName: ag!.nombre,
+                          shiftIdToRemove: shiftRow?.id
+                        });
+                      }}
+                      disabled={isSaving}
+                      className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded p-1 ml-2 shrink-0 transition-colors disabled:opacity-50"
+                      title="Quitar sumariante"
+                    >
+                      <X size={14} strokeWidth={2.5} />
+                    </button>
+                  )}
+                </div>
               ))}
-            </select>
+            </div>
           ) : (
-            <div className={`text-[10px] xl:text-xs font-semibold px-0.5 xl:px-1 py-0.5 truncate ${assignedAgentName ? "text-slate-800" : "text-slate-400"}`}>
-              {assignedAgentName || "- Libre -"}
+            !isAdmin && (
+              <div className="text-[11px] xl:text-xs font-semibold px-1 py-1 truncate text-slate-400">
+                - Libre -
+              </div>
+            )
+          )}
+
+          {isAdmin && assignedAgents.length < 6 && (
+            <div className="relative mt-1">
+              {openSelect === blockLabel && (
+                <div className="fixed inset-0 z-[40]" onClick={() => setOpenSelect(null)}></div>
+              )}
+              {openSelect === blockLabel ? (
+                <div className="absolute top-0 left-0 w-full z-[50] bg-white border border-slate-300 rounded shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 min-w-[150px]">
+                  <div className="flex items-center px-2 py-1.5 border-b border-slate-200 bg-slate-50">
+                    <Search size={14} className="text-slate-400 mr-1.5 shrink-0" />
+                    <input
+                      type="text"
+                      className="w-full text-[10px] xl:text-xs outline-none bg-transparent text-slate-800 placeholder:text-slate-400"
+                      placeholder="Buscar sumariante..."
+                      autoFocus
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setFocusedIndex(0);
+                      }}
+                      onKeyDown={(e) => {
+                        const filtered = agents.filter(a => !assignedIds.includes(a.id) && a.nombre.toLowerCase().includes(searchQuery.toLowerCase()));
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setFocusedIndex(prev => (prev + 1) % filtered.length);
+                        } else if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setFocusedIndex(prev => (prev - 1 + filtered.length) % filtered.length);
+                        } else if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (filtered[focusedIndex]) {
+                            handleAssign(blockLabel, filtered[focusedIndex].id);
+                            setOpenSelect(null);
+                            setSearchQuery("");
+                          }
+                        } else if (e.key === 'Escape') {
+                          setOpenSelect(null);
+                          setSearchQuery("");
+                        }
+                      }}
+                    />
+                  </div>
+                  <div className="max-h-36 overflow-y-auto w-full flex flex-col py-0.5 scrollbar-thin scrollbar-thumb-slate-200">
+                    {(() => {
+                      const filtered = agents.filter(a => !assignedIds.includes(a.id) && a.nombre.toLowerCase().includes(searchQuery.toLowerCase()));
+                      if (filtered.length === 0) {
+                        return <div className="px-2 py-2 text-center text-[10px] xl:text-xs text-slate-500 italic">Sin resultados</div>;
+                      }
+                      return filtered.map((ag, idx) => {
+                        const isFocused = focusedIndex === idx;
+                        return (
+                          <button
+                            key={ag.id}
+                            className={`text-left px-2 py-1.5 text-[10px] xl:text-xs transition-colors ${isFocused ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}
+                            onMouseEnter={() => setFocusedIndex(idx)}
+                            onClick={() => {
+                              handleAssign(blockLabel, ag.id);
+                              setOpenSelect(null);
+                              setSearchQuery("");
+                            }}
+                          >
+                            {ag.nombre}
+                          </button>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  disabled={isSaving}
+                  onClick={() => {
+                    setOpenSelect(blockLabel);
+                    setSearchQuery("");
+                    setFocusedIndex(0);
+                  }}
+                  className={`flex items-center justify-between text-[10px] xl:text-xs font-medium bg-white border border-slate-300 rounded p-1.5 outline-none text-slate-600 w-full ${isSaving ? 'opacity-50 cursor-wait' : 'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 hover:border-slate-400 shadow-sm hover:text-slate-800 transition-colors'}`}
+                >
+                  <span className="truncate">{assignedAgents.length > 0 ? "+ Agregar sumariante..." : "Seleccionar sumariante..."}</span>
+                  <Search size={12} className="text-slate-400 shrink-0 ml-1" />
+                </button>
+              )}
             </div>
           )}
 
-          {isEditing && isAdmin ? (
-            <input
-              type="text"
-              placeholder="Ej. 07 a 14hs"
-              className="text-[10px] xl:text-[11px] w-full border-b-2 border-blue-400 bg-slate-50 shadow-inner rounded-t-sm outline-none px-1 xl:px-1.5 py-0.5 xl:py-1 text-blue-800 placeholder:text-blue-300 focus:border-blue-600"
-              value={localTimes[blockLabel] ?? (assigned?.horario_personalizado || "")}
-              onChange={(e) =>
-                setLocalTimes({ ...localTimes, [blockLabel]: e.target.value })
-              }
-              onBlur={(e) => handleBlur(blockLabel, assigned?.agente_id, e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") e.currentTarget.blur();
-                if (e.key === "Escape") setEditingBlock(null);
-              }}
-              autoFocus
-            />
-          ) : (
-            assigned?.horario_personalizado && (
-              <span 
-                className={`text-[9px] xl:text-[11px] font-medium text-slate-500 flex items-center gap-1 px-0.5 xl:px-1 pb-0.5 ${isAdmin ? "cursor-pointer hover:text-blue-600" : ""}`}
-                onClick={() => isAdmin && setEditingBlock(blockLabel)}
-                title={isAdmin ? "Clic para editar" : ""}
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-blue-400/50 shrink-0"></div>
-                <span className="truncate">{assigned.horario_personalizado}</span>
-              </span>
-            )
-          )}
         </div>
       </div>
     );
@@ -214,7 +300,7 @@ export function CalendarCell({
           <span className={`text-[9px] xl:text-[10px] font-bold uppercase tracking-wider truncate w-16 text-right ${
             isWeekend ? "text-slate-500" : "text-slate-400"
           }`}>
-            {format(date, "EEEE")}
+            {format(date, "EEEE", { locale: es })}
           </span>
         </div>
 
@@ -223,37 +309,40 @@ export function CalendarCell({
         </div>
       </div>
 
-      {confirmModal && confirmModal.isOpen && (
-        <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 animate-in fade-in duration-200"
-          onClick={() => setConfirmModal(null)}
-        >
-          <div 
-            className="bg-white rounded-xl shadow-lg border border-slate-200 p-5 xl:p-6 max-w-sm w-full transform animate-in scale-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base xl:text-lg font-bold text-slate-800 mb-2">¿Confirmar Cambio de Turno?</h3>
-            <p className="text-slate-600 text-xs xl:text-sm mb-5 leading-relaxed">
-              Ya hay un agente asignado. ¿Deseas modificarlo por <span className="font-bold text-slate-800">{confirmModal.newAgentName}</span>?
-            </p>
-            
-            <div className="flex justify-end gap-2 xl:gap-3 font-medium text-xs xl:text-sm">
-              <button 
-                onClick={() => setConfirmModal(null)}
-                className="px-3 xl:px-4 py-1.5 xl:py-2 rounded-md bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 transition-colors"
+      {deleteModal && (
+        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setDeleteModal(null)}>
+          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="p-5">
+              <h3 className="text-lg font-bold text-slate-800 mb-2">
+                ¿Quitar sumariante?
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                ¿Estás seguro de que quieres eliminar a <span className="font-semibold text-slate-800">{deleteModal.agentName}</span> de este turno?
+              </p>
+            </div>
+            <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeleteModal(null)}
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                disabled={loadingBlock !== null}
               >
                 Cancelar
               </button>
-              <button 
-                onClick={() => executeAssign(confirmModal.blockLabel, confirmModal.newAgentId)}
-                className="px-3 xl:px-4 py-1.5 xl:py-2 rounded-md bg-green-600 text-white hover:bg-green-700 transition-colors"
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={loadingBlock !== null}
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm flex items-center gap-2"
               >
-                SÍ, Confirmar
+                {loadingBlock !== null && <Loader2 size={14} className="animate-spin" />}
+                Eliminar
               </button>
             </div>
           </div>
         </div>
       )}
+
     </>
   );
 }

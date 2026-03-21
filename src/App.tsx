@@ -3,7 +3,6 @@ import { Navbar } from "./components/layout/Navbar";
 import { TurnosPage } from "./pages/TurnosPage";
 import { AgentesPage } from "./pages/AgentesPage";
 import { LoginPage } from "./pages/LoginPage";
-import { ConfigAccesos } from "./pages/ConfigAccesos";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Clock, Loader2 } from "lucide-react";
 
@@ -49,7 +48,7 @@ function ProtectedRoute({ children, requireAdmin = false }: { children: React.Re
   }
   
   if (requireAdmin) {
-     const isAppAdmin = user.email === 'toledomariajulieta.mpf@gmail.com' || profile.is_admin;
+     const isAppAdmin = profile.is_admin === true;
      if (!isAppAdmin) return <Navigate to="/" replace />;
   }
   
@@ -67,7 +66,6 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<ProtectedRoute><TurnosPage /></ProtectedRoute>} />
               <Route path="/agentes" element={<ProtectedRoute requireAdmin><AgentesPage /></ProtectedRoute>} />
-              <Route path="/accesos" element={<ProtectedRoute requireAdmin><ConfigAccesos /></ProtectedRoute>} />
             </Routes>
           </main>
         </div>

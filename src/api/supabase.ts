@@ -66,39 +66,38 @@ export const api = {
       return data || [];
     },
     async assign(fecha: string, tipo_turno: ShiftType, agente_id: string, horario_personalizado?: string): Promise<Shift> {
-      const { data: existing } = await supabase.from('turnos').select('*').match({fecha, tipo_turno}).maybeSingle();
+      // 1. Obtener horario personalizado de otros agentes en el mismo turno si existe
+      const { data: existing } = await supabase.from('turnos').select('*').match({fecha, tipo_turno}).limit(1);
       
       const payload: any = { fecha, tipo_turno, agente_id };
       if (horario_personalizado !== undefined) {
          payload.horario_personalizado = horario_personalizado;
-      } else if (existing) {
-         payload.horario_personalizado = existing.horario_personalizado;
+      } else if (existing && existing.length > 0) {
+         payload.horario_personalizado = existing[0].horario_personalizado;
       }
 
-      if (existing) {
-         const { data, error } = await supabase.from('turnos').update(payload).eq('id', existing.id).select().single();
-         if (error) throw error;
-         return data;
-      } else {
-         const { data, error } = await supabase.from('turnos').insert([payload]).select().single();
-         if (error) throw error;
-         return data;
-      }
-    },
-    async updateHorario(fecha: string, tipo_turno: ShiftType, horario_personalizado: string): Promise<Shift> {
-      const { data: existing } = await supabase.from('turnos').select('*').match({fecha, tipo_turno}).maybeSingle();
-      if (!existing) {
-         throw new Error("Debes seleccionar un agente antes de establecer un horario personalizado.");
-      }
-      const { data, error } = await supabase.from('turnos').update({ horario_personalizado }).eq('id', existing.id).select().single();
+      // 2. Revisar si este agente DE CASUALIDAD ya está insertado para no duplicar error
+      const { data: duplicate } = await supabase.from('turnos').select('*').match({fecha, tipo_turno, agente_id}).maybeSingle();
+      if (duplicate) return duplicate;
+
+      // 3. Insertamos el nuevo agente en SU PROPIA FILA
+      const { data, error } = await supabase.from('turnos').insert([payload]).select().single();
       if (error) throw error;
       return data;
     },
-    async remove(fecha: string, tipo_turno: ShiftType): Promise<void> {
+    async updateHorarioPorTurno(fecha: string, tipo_turno: ShiftType, horario_personalizado: string): Promise<void> {
+      const { error } = await supabase.from('turnos').update({ horario_personalizado }).match({ fecha, tipo_turno });
+      if (error) throw error;
+    },
+    async removeAgent(fecha: string, tipo_turno: ShiftType, agente_id: string): Promise<void> {
       const { error } = await supabase
         .from("turnos")
         .delete()
-        .match({ fecha, tipo_turno });
+        .match({ fecha, tipo_turno, agente_id });
+      if (error) throw error;
+    },
+    async removeShiftById(id: string): Promise<void> {
+      const { error } = await supabase.from('turnos').delete().eq('id', id);
       if (error) throw error;
     },
   },

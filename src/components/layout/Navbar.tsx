@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Users, Scale, LogIn, LogOut, ShieldCheck } from "lucide-react";
+import { Calendar, Users, Scale, LogIn, LogOut, User } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -9,7 +9,7 @@ export function Navbar() {
   const { user, profile, signOut } = useAuth();
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
-  const isAdmin = user?.email === 'toledomariajulieta.mpf@gmail.com' || profile?.is_admin === true;
+  const isAdmin = profile?.is_admin === true;
 
   useEffect(() => {
     if (!showLogoutModal) return;
@@ -61,7 +61,6 @@ export function Navbar() {
               )}
               
               {isAdmin && (
-                <>
                   <Link
                     to="/agentes"
                     className={cn(
@@ -74,20 +73,15 @@ export function Navbar() {
                     <Users size={18} />
                     <span className="hidden sm:inline">Personal</span>
                   </Link>
-                  <Link
-                    to="/accesos"
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors border border-transparent",
-                      location.pathname === "/accesos"
-                        ? "bg-amber-50 text-amber-700 border-amber-200"
-                        : "text-amber-600 hover:bg-amber-50 hover:text-amber-800"
-                    )}
-                    title="Aprobar usuarios pendientes"
-                  >
-                    <ShieldCheck size={18} />
-                    <span className="hidden sm:inline">Accesos</span>
-                  </Link>
-                </>
+              )}
+
+              {user && profile && (
+                <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-600 text-white shadow-md ml-2 sm:ml-4 border border-emerald-700">
+                  <User size={16} className="text-emerald-50" />
+                  <span className="text-sm font-semibold tracking-tight truncate max-w-[120px] sm:max-w-xs">
+                    {profile.nombre || user.email?.split("@")[0]}
+                  </span>
+                </div>
               )}
 
               {!user ? (
@@ -103,7 +97,7 @@ export function Navbar() {
               ) : (
                 <button
                   onClick={() => setShowLogoutModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors ml-4 border border-transparent hover:border-red-200"
+                  className="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors ml-2 border border-transparent hover:border-red-200"
                   title="Cerrar sesión"
                 >
                   <LogOut size={18} />

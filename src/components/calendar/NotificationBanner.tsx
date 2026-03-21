@@ -79,8 +79,8 @@ export function NotificationBanner() {
 
   return (
     <>
-      <div className="bg-green-50 border border-green-200 rounded-xl p-3 sm:p-4 flex items-start sm:items-center gap-3 mb-2 transition-colors">
-        <div className="bg-green-100 p-2 rounded-lg text-green-700 shrink-0">
+      <div className="bg-emerald-600 border border-emerald-700 rounded-xl p-3 sm:p-4 flex items-start sm:items-center gap-3 mb-2 transition-colors shadow-md">
+        <div className="bg-emerald-700 p-2 rounded-lg text-emerald-50 shrink-0">
           <Bell size={20} />
         </div>
         
@@ -88,7 +88,7 @@ export function NotificationBanner() {
           {isEditing && isAdmin ? (
             <div className="flex flex-col xl:flex-row gap-2 w-full">
               <textarea
-                className="flex-1 w-full text-sm bg-white border border-green-300 rounded-md p-2 outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent text-green-900 resize-none shadow-sm"
+                className="flex-1 w-full text-sm bg-white border border-emerald-300 rounded-md p-2 outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent text-emerald-900 font-bold resize-none shadow-sm"
                 value={editValue}
                 onChange={(e) => setEditValue(e.target.value)}
                 rows={2}
@@ -99,7 +99,7 @@ export function NotificationBanner() {
                   onClick={handleSaveClick}
                   disabled={saving}
                   title="Guardar notificación"
-                  className="flex items-center justify-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 border border-transparent"
+                  className="flex items-center justify-center gap-1 bg-emerald-800 hover:bg-emerald-900 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors disabled:opacity-50 border border-transparent"
                 >
                   <Check size={16} />
                   <span className="xl:hidden">Guardar</span>
@@ -107,7 +107,7 @@ export function NotificationBanner() {
                 <button
                   onClick={() => { setIsEditing(false); setEditValue(message); }}
                   disabled={saving}
-                  className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-100 rounded-md transition-colors border border-green-200 bg-white"
+                  className="flex items-center justify-center px-3 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50 rounded-md transition-colors border border-emerald-200 bg-white"
                 >
                   Cancelar
                 </button>
@@ -115,15 +115,15 @@ export function NotificationBanner() {
             </div>
           ) : (
             <div className="flex items-center justify-between gap-4">
-              <div className="text-[13px] sm:text-sm text-green-800 flex-1 leading-relaxed">
-                <strong className="font-bold text-green-900 mr-2">Notificación:</strong>
+              <div className="text-[13px] sm:text-sm text-white font-bold flex-1 leading-relaxed">
+                <span className="mr-2">Notificación:</span>
                 {message}
               </div>
               
               {isAdmin && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="shrink-0 p-1.5 text-green-600 hover:text-green-800 hover:bg-green-200 bg-green-100 rounded-md transition-colors border border-transparent shadow-sm"
+                  className="shrink-0 p-1.5 text-emerald-100 hover:text-white hover:bg-emerald-500 bg-emerald-700 rounded-md transition-colors border border-transparent shadow-sm"
                   title="Editar aviso"
                 >
                   <Edit2 size={16} />
@@ -165,7 +165,7 @@ export function NotificationBanner() {
               <button 
                 disabled={saving}
                 onClick={executeSave}
-                className="flex items-center gap-2 px-3 xl:px-4 py-1.5 xl:py-2 rounded-md bg-green-600 text-white hover:bg-green-700 border border-green-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-3 xl:px-4 py-1.5 xl:py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 border border-emerald-700 transition-colors disabled:opacity-50"
               >
                 {saving && <Loader2 size={14} className="animate-spin" />}
                 SÍ, Confirmar
@@ -176,7 +176,7 @@ export function NotificationBanner() {
       )}
 
       {successToast && (
-        <div className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 bg-green-600 text-white px-4 py-3 rounded-xl shadow-md flex items-center gap-2 animate-in slide-in-from-bottom-6 fade-in duration-300 z-[110]">
+        <div className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 bg-emerald-600 text-white px-4 py-3 rounded-xl shadow-md flex items-center gap-2 animate-in slide-in-from-bottom-6 fade-in duration-300 z-[110]">
           <Check size={18} />
           <span className="text-sm font-semibold">Notificación actualizada</span>
         </div>
