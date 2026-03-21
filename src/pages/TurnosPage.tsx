@@ -128,21 +128,21 @@ export function TurnosPage() {
   });
 
   return (
-    <div className="w-full max-w-screen-2xl mx-auto p-2 sm:p-4 xl:p-6 space-y-3 sm:space-y-4">
+    <div className="w-full max-w-screen-2xl mx-auto p-1.5 sm:p-4 xl:p-6 space-y-2 sm:space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-slate-900">
             Calendario Mensual
           </h1>
-          <p className="text-sm sm:text-base text-slate-500 mt-0.5 sm:mt-1">Gestión de turnos y guardias operativas</p>
+          <p className="text-xs sm:text-base text-slate-500 mt-0.5 sm:mt-1">Gestión de turnos y guardias operativas</p>
         </div>
         <div className="flex flex-col-reverse sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
           <button 
             onClick={() => setShowFeriadosModal(true)}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto bg-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors text-slate-700 font-semibold text-sm h-10 sm:h-auto"
+            className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto bg-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors text-slate-700 font-semibold text-xs sm:text-sm h-9 sm:h-auto"
             title="Ver calendario de feriados"
           >
-             <CalendarDays size={18} className="text-blue-600" />
+             <CalendarDays size={16} className="text-blue-600 shrink-0 sm:w-[18px] sm:h-[18px]" />
              <span>Feriados 2026</span>
           </button>
           
@@ -168,13 +168,14 @@ export function TurnosPage() {
 
       <NotificationBanner />
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-        <div className="min-w-[800px] xl:min-w-[1024px]">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 overflow-x-auto -webkit-overflow-scrolling-touch">
+        <div className="min-w-[640px] sm:min-w-[800px] xl:min-w-[1024px]">
           {/* Headers */}
           <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
             {weekDaysHeaders.map(day => (
-              <div key={day} className="py-3 text-center text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                {day}
+              <div key={day} className="py-1.5 sm:py-3 text-center text-[10px] sm:text-sm font-semibold text-slate-700 uppercase tracking-wider">
+                <span className="hidden sm:inline">{day}</span>
+                <span className="sm:hidden">{day.slice(0, 3)}</span>
               </div>
             ))}
           </div>

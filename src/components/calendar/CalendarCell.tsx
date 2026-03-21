@@ -95,7 +95,7 @@ export function CalendarCell({
     return (
       <div
         key={blockLabel}
-        className={`flex flex-col gap-1.5 p-1.5 xl:p-2.5 rounded-md border min-h-[50px] ${
+        className={`flex flex-col gap-1 sm:gap-1.5 p-1 sm:p-1.5 xl:p-2.5 rounded-md border min-h-[36px] sm:min-h-[50px] ${
           blockLabel === "Franco Compensatorio"
             ? "bg-red-50 border-red-300"
             : blockLabel === "Trasnoche"
@@ -105,7 +105,7 @@ export function CalendarCell({
       >
         <div className={`flex items-center w-full mb-0.5 ${blockLabel === "Franco Compensatorio" ? "justify-center text-center" : "justify-between"}`}>
           <span
-            className={`font-bold text-[10px] xl:text-xs uppercase tracking-tight flex items-center ${
+            className={`font-bold text-[8px] sm:text-[10px] xl:text-xs uppercase tracking-tight flex items-center ${
               blockLabel === "Franco Compensatorio"
                 ? "text-red-700 w-full justify-center"
                 : blockLabel === "Trasnoche"
@@ -151,7 +151,7 @@ export function CalendarCell({
           {assignedAgents.length > 0 ? (
             <div className="flex flex-col gap-1 w-full mt-1">
               {assignedAgents.map((ag) => (
-                <div key={ag?.id} className={`flex items-center justify-between text-[11px] xl:text-[13px] font-semibold px-2 py-1 bg-white rounded shadow-sm border ${isAdmin ? "border-slate-300" : "border-slate-200"}`}>
+                <div key={ag?.id} className={`flex items-center justify-between text-[9px] sm:text-[11px] xl:text-[13px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white rounded shadow-sm border ${isAdmin ? "border-slate-300" : "border-slate-200"}`}>
                   <span className="truncate text-slate-800 leading-tight" title={ag?.nombre}>{ag?.nombre}</span>
                   {isAdmin && (
                     <button
@@ -171,7 +171,7 @@ export function CalendarCell({
                       className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded p-1 ml-2 shrink-0 transition-colors disabled:opacity-50"
                       title="Quitar sumariante"
                     >
-                      <X size={14} strokeWidth={2.5} />
+                      <X size={12} strokeWidth={2.5} className="sm:w-[14px] sm:h-[14px]" />
                     </button>
                   )}
                 </div>
@@ -179,7 +179,7 @@ export function CalendarCell({
             </div>
           ) : (
             !isAdmin && (
-              <div className="text-[11px] xl:text-xs font-semibold px-1 py-1 truncate text-slate-400">
+              <div className="text-[9px] sm:text-[11px] xl:text-xs font-semibold px-1 py-0.5 sm:py-1 truncate text-slate-400">
                 - Libre -
               </div>
             )
