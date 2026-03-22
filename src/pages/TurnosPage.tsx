@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isToday as isTodayFn, isWeekend as isWeekendFn, startOfWeek, endOfWeek, addDays, isBefore, startOfDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Loader2, CalendarDays, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, CalendarDays, X, Printer } from "lucide-react";
 import { CalendarCell } from "../components/calendar/CalendarCell";
 import { NotificationBanner } from "../components/calendar/NotificationBanner";
 import { api } from "../api/supabase";
 import { useAuth } from "../contexts/AuthContext";
-import type { Agent, Shift, ShiftType } from "../types";
+import type { Agent, Shift, ShiftType, Feria } from "../types";
+import { FeriaModal } from "../components/calendar/FeriaModal";
+import { Palmtree } from "lucide-react";
 
 const FERIADOS_2026 = [
   { date: "2026-03-23", name: "Fines Turísticos", type: "Turístico" },
@@ -34,9 +36,11 @@ export function TurnosPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
+  const [ferias, setFerias] = useState<Feria[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showFeriadosModal, setShowFeriadosModal] = useState(false);
+  const [showFeriaModal, setShowFeriaModal] = useState(false);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -60,13 +64,15 @@ export function TurnosPage() {
       const sDateStr = format(startDate, "yyyy-MM-dd");
       const eDateStr = format(endDate, "yyyy-MM-dd");
 
-      const [agentsData, shiftsData] = await Promise.all([
+      const [agentsData, shiftsData, feriasData] = await Promise.all([
         api.agents.getAll(),
         api.shifts.getByDateRange(sDateStr, eDateStr),
+        api.ferias.getAll(),
       ]);
 
       setAgents(agentsData);
       setShifts(shiftsData);
+      setFerias(feriasData);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -121,6 +127,24 @@ export function TurnosPage() {
     }
   };
 
+  const handleAssignFeria = async (agente_id: string, fecha_inicio: string, fecha_fin: string) => {
+    try {
+      await api.ferias.create({ agente_id, fecha_inicio, fecha_fin });
+      await loadData();
+    } catch (err: any) {
+      setError("Error al crear feria: " + err.message);
+    }
+  };
+
+  const handleDeleteFeria = async (id: string) => {
+    try {
+      await api.ferias.delete(id);
+      await loadData();
+    } catch (err: any) {
+      setError("Error al eliminar feria: " + err.message);
+    }
+  };
+
   const weekDaysHeaders = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
   const upcomingHolidays = FERIADOS_2026.filter(feriado => {
@@ -136,7 +160,23 @@ export function TurnosPage() {
           </h1>
           <p className="text-xs sm:text-base text-slate-500 mt-0.5 sm:mt-1">Gestión de turnos y guardias operativas</p>
         </div>
-        <div className="flex flex-col-reverse sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto">
+        <div className="flex flex-col-reverse sm:flex-row items-center gap-2 sm:gap-4 w-full sm:w-auto print:hidden">
+          <button 
+            onClick={() => window.print()}
+            className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto bg-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors text-slate-700 font-semibold text-xs sm:text-sm h-9 sm:h-auto"
+            title="Imprimir calendario"
+          >
+             <Printer size={16} className="text-slate-600 shrink-0 sm:w-[18px] sm:h-[18px]" />
+             <span>Imprimir Pantalla</span>
+          </button>
+          <button 
+            onClick={() => setShowFeriaModal(true)}
+            className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto bg-sky-50 hover:bg-sky-100 text-sky-700 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border border-sky-200 shadow-sm transition-colors font-semibold text-xs sm:text-sm h-9 sm:h-auto"
+            title="Gestionar Ferias y Vacaciones"
+          >
+             <Palmtree size={16} className="shrink-0 sm:w-[18px] sm:h-[18px]" />
+             <span>Feria</span>
+          </button>
           <button 
             onClick={() => setShowFeriadosModal(true)}
             className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto bg-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors text-slate-700 font-semibold text-xs sm:text-sm h-9 sm:h-auto"
@@ -150,7 +190,7 @@ export function TurnosPage() {
             <button onClick={prevMonth} disabled={loading} className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 disabled:opacity-50">
               <ChevronLeft size={20} />
             </button>
-            <span className="font-semibold text-slate-700 min-w-[120px] sm:min-w-[160px] text-center capitalize text-base sm:text-lg">
+            <span className="font-bold text-slate-700 min-w-[100px] sm:min-w-[130px] text-center capitalize text-xs sm:text-sm">
               {format(currentDate, "MMMM yyyy", { locale: es })}
             </span>
             <button onClick={nextMonth} disabled={loading} className="p-1.5 sm:p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-600 disabled:opacity-50">
@@ -205,6 +245,7 @@ export function TurnosPage() {
                      isAdmin={canEdit}
                      agents={agents}
                      shifts={shifts}
+                     ferias={ferias}
                      onAssignShift={handleAssignShift}
                      onRemoveAgent={handleRemoveAgentFromShift}
                      onUpdateHorarioTurno={handleUpdateHorarioTurno}
@@ -274,6 +315,16 @@ export function TurnosPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showFeriaModal && (
+        <FeriaModal 
+          agents={agents}
+          ferias={ferias}
+          onClose={() => setShowFeriaModal(false)}
+          onAssign={handleAssignFeria}
+          onDelete={handleDeleteFeria}
+        />
       )}
     </div>
   );

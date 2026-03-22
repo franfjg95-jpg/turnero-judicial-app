@@ -1,5 +1,5 @@
 import { supabase } from "../lib/supabase";
-import type { Agent, Shift, ShiftType, Profile } from "../types";
+import type { Agent, Shift, ShiftType, Profile, Feria } from "../types";
 
 export const api = {
   auth: {
@@ -98,6 +98,34 @@ export const api = {
     },
     async removeShiftById(id: string): Promise<void> {
       const { error } = await supabase.from('turnos').delete().eq('id', id);
+      if (error) throw error;
+    },
+  },
+  ferias: {
+    async getAll(): Promise<Feria[]> {
+      const { data, error } = await supabase
+        .from("ferias")
+        .select(`
+          *,
+          agentes (
+            nombre
+          )
+        `)
+        .order("fecha_inicio", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    async create(feria: { agente_id: string; fecha_inicio: string; fecha_fin: string }): Promise<Feria> {
+      const { data, error } = await supabase
+        .from("ferias")
+        .insert([feria])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    async delete(id: string): Promise<void> {
+      const { error } = await supabase.from("ferias").delete().eq("id", id);
       if (error) throw error;
     },
   },

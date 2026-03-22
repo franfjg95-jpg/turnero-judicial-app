@@ -2,12 +2,13 @@ import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Loader2, X, Search } from "lucide-react";
-import { type ShiftType, type Agent, type Shift } from "../../types";
+import { type ShiftType, type Agent, type Shift, type Feria } from "../../types";
 
 interface Props {
   date: Date;
   agents: Agent[];
   shifts: Shift[];
+  ferias: Feria[];
   onAssignShift: (date: Date, type: ShiftType, agentId: string) => Promise<void>;
   onRemoveAgent: (date: Date, type: ShiftType, agentId: string, shiftId?: string) => Promise<void>;
   onUpdateHorarioTurno: (date: Date, type: ShiftType, horario: string) => Promise<void>;
@@ -20,6 +21,7 @@ export function CalendarCell({
   date,
   agents,
   shifts,
+  ferias,
   onAssignShift,
   onRemoveAgent,
   onUpdateHorarioTurno,
@@ -36,6 +38,12 @@ export function CalendarCell({
 
   const dateStr = format(date, "yyyy-MM-dd");
   const dayShifts = useMemo(() => shifts.filter((s) => s.fecha === dateStr), [shifts, dateStr]);
+
+  const agentsOnFeriaIds = useMemo(() => {
+    return ferias
+      .filter(f => dateStr >= f.fecha_inicio && dateStr <= f.fecha_fin)
+      .map(f => f.agente_id);
+  }, [ferias, dateStr]);
   
   const [localSchedules, setLocalSchedules] = useState<Record<string, string>>({});
   
@@ -85,6 +93,8 @@ export function CalendarCell({
 
   const renderBlock = (blockLabel: ShiftType) => {
     const assignedShifts = dayShifts.filter((s) => s.tipo_turno === blockLabel);
+    const isIntermedio = blockLabel === "intermedio_1" || blockLabel === "intermedio_2";
+    const displayLabel = isIntermedio ? "Turno Intermedio" : blockLabel;
     
     const assignedIds = assignedShifts.map(s => s.agente_id).filter(Boolean);
     const assignedAgents = assignedIds.map(id => agents.find(a => a.id === id)).filter(Boolean);
@@ -100,6 +110,8 @@ export function CalendarCell({
             ? "bg-red-50 border-red-300"
             : blockLabel === "Trasnoche"
             ? "bg-blue-50 border-blue-300"
+            : isIntermedio
+            ? "bg-rose-50 border-rose-200"
             : "bg-white border-slate-300"
         }`}
       >
@@ -110,10 +122,12 @@ export function CalendarCell({
                 ? "text-red-700 w-full justify-center"
                 : blockLabel === "Trasnoche"
                 ? "text-blue-700 gap-1"
+                : isIntermedio
+                ? "text-rose-800 gap-1"
                 : "text-slate-700 gap-1"
             }`}
           >
-            <span className={blockLabel === "Franco Compensatorio" ? "" : "truncate"}>{blockLabel}</span>
+            <span className={blockLabel === "Franco Compensatorio" ? "" : "truncate"}>{displayLabel}</span>
             
             {blockLabel !== "Franco Compensatorio" && (
               isAdmin && assignedAgents.length > 0 ? (
@@ -168,7 +182,7 @@ export function CalendarCell({
                         });
                       }}
                       disabled={isSaving}
-                      className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded p-1 ml-2 shrink-0 transition-colors disabled:opacity-50"
+                      className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded p-1 ml-2 shrink-0 transition-colors disabled:opacity-50 print:hidden"
                       title="Quitar sumariante"
                     >
                       <X size={12} strokeWidth={2.5} className="sm:w-[14px] sm:h-[14px]" />
@@ -186,7 +200,7 @@ export function CalendarCell({
           )}
 
           {isAdmin && assignedAgents.length < 6 && (
-            <div className="relative mt-1">
+            <div className="relative mt-1 print:hidden">
               {openSelect === blockLabel && (
                 <div className="fixed inset-0 z-[40]" onClick={() => setOpenSelect(null)}></div>
               )}
@@ -214,8 +228,9 @@ export function CalendarCell({
                           setFocusedIndex(prev => (prev - 1 + filtered.length) % filtered.length);
                         } else if (e.key === 'Enter') {
                           e.preventDefault();
-                          if (filtered[focusedIndex]) {
-                            handleAssign(blockLabel, filtered[focusedIndex].id);
+                          const selected = filtered[focusedIndex];
+                          if (selected && !agentsOnFeriaIds.includes(selected.id)) {
+                            handleAssign(blockLabel, selected.id);
                             setOpenSelect(null);
                             setSearchQuery("");
                           }
@@ -234,18 +249,24 @@ export function CalendarCell({
                       }
                       return filtered.map((ag, idx) => {
                         const isFocused = focusedIndex === idx;
+                        const isEnFeria = agentsOnFeriaIds.includes(ag.id);
                         return (
                           <button
                             key={ag.id}
-                            className={`text-left px-2 py-1.5 text-[10px] xl:text-xs transition-colors ${isFocused ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}
-                            onMouseEnter={() => setFocusedIndex(idx)}
+                            disabled={isEnFeria}
+                            className={`text-left px-2 py-1.5 text-[10px] xl:text-xs transition-colors flex justify-between items-center ${
+                               isEnFeria ? 'opacity-50 bg-slate-50 cursor-not-allowed' :
+                               isFocused ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}
+                            onMouseEnter={() => !isEnFeria && setFocusedIndex(idx)}
                             onClick={() => {
+                              if (isEnFeria) return;
                               handleAssign(blockLabel, ag.id);
                               setOpenSelect(null);
                               setSearchQuery("");
                             }}
                           >
-                            {ag.nombre}
+                            <span className={isEnFeria ? "line-through decoration-slate-300" : ""}>{ag.nombre}</span>
+                            {isEnFeria && <span className="text-[9px] xl:text-[10px] font-bold text-sky-600 mx-1 rounded bg-sky-100 px-1.5 py-0.5 whitespace-nowrap">🌴 En Feria</span>}
                           </button>
                         );
                       });
@@ -276,7 +297,9 @@ export function CalendarCell({
 
   const blocksToRender: ShiftType[] = [
     "Mañana",
+    "intermedio_1",
     "Tarde",
+    "intermedio_2",
     "Noche",
     "Trasnoche",
     "Franco Compensatorio",

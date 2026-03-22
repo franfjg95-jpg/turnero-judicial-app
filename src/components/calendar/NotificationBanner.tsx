@@ -123,7 +123,7 @@ export function NotificationBanner() {
               {isAdmin && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="shrink-0 p-1.5 text-emerald-100 hover:text-white hover:bg-emerald-500 bg-emerald-700 rounded-md transition-colors border border-transparent shadow-sm"
+                  className="shrink-0 p-1.5 text-emerald-100 hover:text-white hover:bg-emerald-500 bg-emerald-700 rounded-md transition-colors border border-transparent shadow-sm print:hidden"
                   title="Editar aviso"
                 >
                   <Edit2 size={16} />

@@ -97,7 +97,7 @@ export function Navbar() {
               ) : (
                 <button
                   onClick={() => setShowLogoutModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors ml-2 border border-transparent hover:border-red-200"
+                  className="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors ml-2 border border-transparent hover:border-red-200 print:hidden"
                   title="Cerrar sesión"
                 >
                   <LogOut size={18} />
