@@ -232,7 +232,9 @@ export function TurnosPage() {
         </div>
       )}
 
-      <NotificationBanner />
+      <div className="print:hidden">
+        <NotificationBanner />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 print:block">
         {/* Lado Izquierdo: Calendario Mensual Compacto */}
@@ -268,7 +270,7 @@ export function TurnosPage() {
                   return (
                     <div 
                       key={day.toISOString()} 
-                      className="bg-slate-50/30 border-b border-r border-slate-200 min-h-[90px] opacity-10 print:hidden"
+                      className="bg-slate-50/30 border-b border-r border-slate-200 min-h-[90px] opacity-10 print:invisible print:border-transparent"
                     />
                   );
                 }
@@ -310,10 +312,12 @@ export function TurnosPage() {
                         const agent = agents.find(a => a.id === s.agente_id);
                         if (!agent) return null;
                         
-                        // Iniciales del tipo de turno
-                        const shortShift = s.tipo_turno === "Franco Compensatorio" 
-                          ? "F" 
-                          : s.tipo_turno[0].toUpperCase();
+                        // Nombre del turno limpio para mostrar
+                        const displayShift = s.tipo_turno === "Franco Compensatorio" 
+                          ? "Franco" 
+                          : (s.tipo_turno === "intermedio_1" || s.tipo_turno === "intermedio_2")
+                          ? "Intermedio"
+                          : s.tipo_turno;
 
                         return (
                           <div 
@@ -325,7 +329,7 @@ export function TurnosPage() {
                               {agent.nombre.split(" ")[0]}
                               {s.horario_personalizado ? ` (${s.horario_personalizado})` : ''}
                             </span>
-                            <span className="text-[7px] text-blue-600 font-bold shrink-0">{shortShift}</span>
+                            <span className="text-[7px] text-blue-600 font-extrabold uppercase shrink-0 ml-1.5">{displayShift}</span>
                           </div>
                         );
                       })}

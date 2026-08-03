@@ -25,86 +25,75 @@ body {
 @media print {
   @page {
     size: A4 landscape;
-    margin: 8mm;
+    margin: 6mm;
   }
   body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
     background-color: white !important;
   }
   
-  /* Additional force background color for print */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
-  .print-no-break {
-    page-break-inside: avoid;
-    break-inside: avoid;
-  }
-
-  /* Hide UI elements on print */
-  header, 
-  nav, 
-  button, 
-  .print-hide, 
-  .notification-banner,
-  input::placeholder {
+  /* Esconder elementos innecesarios */
+  header, nav, button, .print\:hidden, .print-hide {
     display: none !important;
   }
+  
+  /* Quitar scrollbars y límites de altura */
+  .overflow-y-auto, 
+  .custom-scrollbar,
+  .max-h-\[65px\] {
+    overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
 
-  /* Make sure calendar fits perfectly on printed page */
+  /* Ajustar celdas de días para impresión compacta */
+  .min-h-\[100px\] {
+    min-height: 65px !important;
+    height: auto !important;
+    padding: 3px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+
+  /* Simplificar filas de agentes en impresión para ahorrar espacio y tinta */
+  .text-\[9px\].bg-white.border {
+    background-color: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin-bottom: 2px !important;
+    font-size: 8px !important;
+    line-height: 1.1 !important;
+    box-shadow: none !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+  }
+
+  /* El texto de los sumariantes no debe truncarse con puntos suspensivos en la impresión */
+  .truncate {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
+
+  /* Reducir tamaño del título y subtítulo en impresión */
+  h1 {
+    font-size: 16pt !important;
+    margin-bottom: 2px !important;
+  }
+  p {
+    font-size: 9pt !important;
+    margin-top: 0 !important;
+  }
+
+  /* Asegurar que el calendario ocupe todo el ancho disponible */
   main {
     padding: 0 !important;
     margin: 0 !important;
-    overflow: visible !important;
-  }
-
-  /* Adjust inputs for print */
-  input {
-    border: none !important;
-    background: transparent !important;
-    padding: 0 !important;
-  }
-
-  /* Compact calendar cells and grid spacing for single-sheet printout */
-  main .grid {
-    gap: 2px !important;
-  }
-  
-  main .min-h-\[140px\] {
-    min-height: 80px !important;
-    padding: 3px !important;
-    border-radius: 6px !important;
-    border-color: #cbd5e1 !important;
-  }
-
-  main .text-sm.xl\:text-\[15px\] {
-    font-size: 11px !important;
-  }
-
-  main .text-\[9px\].xl\:text-\[10px\] {
-    font-size: 8px !important;
-  }
-
-  /* Compact blocks inside each day */
-  main .rounded-lg.border {
-    padding: 2px 4px !important;
-    min-height: auto !important;
-    gap: 1px !important;
-    border-radius: 4px !important;
-  }
-
-  main .font-bold.text-\[8px\] {
-    font-size: 8px !important;
-  }
-
-  /* Compact agent name lists and shrink font sizes */
-  main .text-\[9px\].sm\:text-\[11px\].xl\:text-\[13px\] {
-    font-size: 8.5px !important;
-    padding: 1px 3px !important;
-    border-radius: 3px !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
 
