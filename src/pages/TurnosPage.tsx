@@ -179,7 +179,7 @@ export function TurnosPage() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Calendario Mensual
+            Calendario Mensual <span className="capitalize text-blue-600 font-extrabold print:inline hidden sm:inline ml-1.5">— {format(currentDate, "MMMM yyyy", { locale: es })}</span>
           </h1>
           <p className="text-xs sm:text-base text-slate-500 mt-0.5 sm:mt-1">Gestión de turnos y guardias operativas</p>
         </div>
