@@ -27,31 +27,31 @@ export function Navbar() {
 
   return (
     <>
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 print:hidden transition-all duration-300">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-600 p-2 rounded-lg text-white">
-                <Scale size={24} />
+              <div className="bg-gradient-to-tr from-blue-600 to-indigo-500 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/20 hover:scale-105 transition-transform">
+                <Scale size={20} />
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent hidden sm:block">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 via-slate-800 to-slate-700 bg-clip-text text-transparent hidden sm:block tracking-tight">
                   Turnero UJ
                 </h1>
-                <h1 className="text-xl font-bold text-slate-900 sm:hidden">
+                <h1 className="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent sm:hidden tracking-tight">
                   Turnero
                 </h1>
               </div>
             </div>
 
-            <nav className="flex items-center space-x-2 sm:space-x-4">
+            <nav className="flex items-center space-x-1.5 sm:space-x-3">
               {user && profile?.estado === 'aprobado' && (
                 <Link
                   to="/"
                   className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors",
+                    "flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200",
                     location.pathname === "/"
-                      ? "bg-blue-50 text-blue-700"
+                      ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100"
                       : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   )}
                 >
@@ -64,9 +64,9 @@ export function Navbar() {
                   <Link
                     to="/agentes"
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm transition-colors",
+                      "flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm transition-all duration-200",
                       location.pathname === "/agentes"
-                        ? "bg-blue-50 text-blue-700"
+                        ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100"
                         : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                     )}
                   >
@@ -76,9 +76,9 @@ export function Navbar() {
               )}
 
               {user && profile && (
-                <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-emerald-600 text-white shadow-md ml-2 sm:ml-4 border border-emerald-700">
-                  <User size={16} className="text-emerald-50" />
-                  <span className="text-sm font-semibold tracking-tight truncate max-w-[120px] sm:max-w-xs">
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-sm ml-2 sm:ml-4 border border-emerald-500/20">
+                  <User size={14} className="text-emerald-50" />
+                  <span className="text-xs font-semibold tracking-tight truncate max-w-[100px] sm:max-w-xs">
                     {profile.nombre || user.email?.split("@")[0]}
                   </span>
                 </div>
@@ -88,7 +88,7 @@ export function Navbar() {
                 location.pathname !== "/login" && (
                   <Link
                     to="/login"
-                    className="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm text-blue-600 hover:bg-blue-50 transition-colors ml-4 border border-blue-200"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm text-blue-600 hover:bg-blue-50 transition-all duration-200 ml-4 border border-blue-200"
                   >
                     <LogIn size={18} />
                     <span className="hidden sm:inline">Ingresar</span>
@@ -97,7 +97,7 @@ export function Navbar() {
               ) : (
                 <button
                   onClick={() => setShowLogoutModal(true)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-colors ml-2 border border-transparent hover:border-red-200 print:hidden"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-sm text-slate-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 ml-2 border border-transparent hover:border-red-200 print:hidden"
                   title="Cerrar sesión"
                 >
                   <LogOut size={18} />

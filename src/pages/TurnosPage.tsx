@@ -8,7 +8,7 @@ import { api } from "../api/supabase";
 import { useAuth } from "../contexts/AuthContext";
 import type { Agent, Shift, ShiftType, Feria } from "../types";
 import { FeriaModal } from "../components/calendar/FeriaModal";
-import { Palmtree } from "lucide-react";
+
 
 const FERIADOS_2026 = [
   { date: "2026-03-23", name: "Fines Turísticos", type: "Turístico" },
@@ -30,10 +30,11 @@ const FERIADOS_2026 = [
 ];
 
 export function TurnosPage() {
-  const { profile } = useAuth();
+  const { profile, currentAdminId } = useAuth();
   const isAdmin = profile?.is_admin === true;
 
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [agents, setAgents] = useState<Agent[]>([]);
   const [ferias, setFerias] = useState<Feria[]>([]);
@@ -53,11 +54,14 @@ export function TurnosPage() {
   });
 
   useEffect(() => {
-    loadData();
-  }, [currentDate]);
+    if (currentAdminId) {
+      loadData();
+    }
+  }, [currentDate, currentAdminId]);
 
   const loadData = async () => {
     try {
+      if (!currentAdminId) return;
       setLoading(true);
       setError("");
       
@@ -65,9 +69,9 @@ export function TurnosPage() {
       const eDateStr = format(endDate, "yyyy-MM-dd");
 
       const [agentsData, shiftsData, feriasData] = await Promise.all([
-        api.agents.getAll(),
-        api.shifts.getByDateRange(sDateStr, eDateStr),
-        api.ferias.getAll(),
+        api.agents.getAll(currentAdminId),
+        api.shifts.getByDateRange(sDateStr, eDateStr, currentAdminId),
+        api.ferias.getAll(currentAdminId),
       ]);
 
       setAgents(agentsData);
@@ -80,17 +84,26 @@ export function TurnosPage() {
     }
   };
 
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const nextMonth = () => {
+    const next = addMonths(currentDate, 1);
+    setCurrentDate(next);
+    setSelectedDate(startOfMonth(next));
+  };
+  
+  const prevMonth = () => {
+    const prev = subMonths(currentDate, 1);
+    setCurrentDate(prev);
+    setSelectedDate(startOfMonth(prev));
+  };
 
   const handleAssignShift = async (date: Date, type: ShiftType, agentId: string) => {
     const dateStr = format(date, "yyyy-MM-dd");
     try {
-      if (agentId) {
-        await api.shifts.assign(dateStr, type, agentId);
+      if (agentId && currentAdminId) {
+        await api.shifts.assign(dateStr, type, agentId, currentAdminId);
         if (type === "Trasnoche") {
           const nextDateStr = format(addDays(date, 1), "yyyy-MM-dd");
-          await api.shifts.assign(nextDateStr, "Franco Compensatorio", agentId);
+          await api.shifts.assign(nextDateStr, "Franco Compensatorio", agentId, currentAdminId);
         }
       }
       await loadData();
@@ -104,12 +117,12 @@ export function TurnosPage() {
     try {
        if (shiftId) {
           await api.shifts.removeShiftById(shiftId);
-       } else {
-          await api.shifts.removeAgent(dateStr, type, agentId);
+       } else if (currentAdminId) {
+          await api.shifts.removeAgent(dateStr, type, agentId, currentAdminId);
        }
-       if (type === "Trasnoche") {
+       if (type === "Trasnoche" && currentAdminId) {
           const nextDateStr = format(addDays(date, 1), "yyyy-MM-dd");
-          await api.shifts.removeAgent(nextDateStr, "Franco Compensatorio", agentId);
+          await api.shifts.removeAgent(nextDateStr, "Franco Compensatorio", agentId, currentAdminId);
        }
        await loadData();
     } catch (err: any) {
@@ -120,19 +133,23 @@ export function TurnosPage() {
   const handleUpdateHorarioTurno = async (date: Date, type: ShiftType, horario: string) => {
     const dateStr = format(date, "yyyy-MM-dd");
     try {
-      await api.shifts.updateHorarioPorTurno(dateStr, type, horario);
+      if (currentAdminId) {
+        await api.shifts.updateHorarioPorTurno(dateStr, type, horario, currentAdminId);
+      }
       await loadData();
     } catch (err: any) {
       setError("Error al guardar el horario: " + err.message);
     }
   };
 
-  const handleAssignFeria = async (agente_id: string, fecha_inicio: string, fecha_fin: string) => {
+  const handleAssignFeria = async (agente_id: string, fecha_inicio: string, fecha_fin: string, motivo: string) => {
     try {
-      await api.ferias.create({ agente_id, fecha_inicio, fecha_fin });
+      if (currentAdminId) {
+        await api.ferias.create({ agente_id, fecha_inicio, fecha_fin, motivo }, currentAdminId);
+      }
       await loadData();
     } catch (err: any) {
-      setError("Error al crear feria: " + err.message);
+      setError("Error al crear feria/licencia: " + err.message);
     }
   };
 
@@ -151,8 +168,14 @@ export function TurnosPage() {
      return !isBefore(parseISO(feriado.date), monthStart);
   });
 
+  const selectedDateStr = format(selectedDate, "yyyy-MM-dd");
+  const selectedDateIsWeekend = isWeekendFn(selectedDate);
+  const selectedDateIsToday = isTodayFn(selectedDate);
+  const selectedDateIsPast = isBefore(startOfDay(selectedDate), startOfDay(new Date()));
+  const selectedDateCanEdit = isAdmin && !selectedDateIsPast;
+
   return (
-    <div className="w-full max-w-screen-2xl mx-auto p-1.5 sm:p-4 xl:p-6 space-y-2 sm:space-y-4">
+    <div className="w-full max-w-screen-2xl mx-auto p-1.5 sm:p-4 xl:p-6 space-y-2 sm:space-y-4 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-3xl font-bold tracking-tight text-slate-900">
@@ -169,14 +192,17 @@ export function TurnosPage() {
              <Printer size={16} className="text-slate-600 shrink-0 sm:w-[18px] sm:h-[18px]" />
              <span>Imprimir Pantalla</span>
           </button>
-          <button 
-            onClick={() => setShowFeriaModal(true)}
-            className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto bg-sky-50 hover:bg-sky-100 text-sky-700 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border border-sky-200 shadow-sm transition-colors font-semibold text-xs sm:text-sm h-9 sm:h-auto"
-            title="Gestionar Ferias y Vacaciones"
-          >
-             <Palmtree size={16} className="shrink-0 sm:w-[18px] sm:h-[18px]" />
-             <span>Feria</span>
-          </button>
+          
+          {isAdmin && (
+            <button 
+              onClick={() => setShowFeriaModal(true)}
+              className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto bg-sky-50 hover:bg-sky-100 text-sky-700 px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border border-sky-200 shadow-sm transition-colors font-semibold text-xs sm:text-sm h-9 sm:h-auto"
+              title="Gestionar Ferias y Vacaciones"
+            >
+               <CalendarDays size={16} className="shrink-0 sm:w-[18px] sm:h-[18px]" />
+               <span>Feria y Vacaciones</span>
+            </button>
+          )}
           <button 
             onClick={() => setShowFeriadosModal(true)}
             className="flex items-center justify-center gap-1.5 sm:gap-2 w-full sm:w-auto bg-white px-2.5 sm:px-4 py-1.5 sm:py-2.5 rounded-xl border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors text-slate-700 font-semibold text-xs sm:text-sm h-9 sm:h-auto"
@@ -208,51 +234,140 @@ export function TurnosPage() {
 
       <NotificationBanner />
 
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 overflow-x-auto -webkit-overflow-scrolling-touch">
-        <div className="min-w-[640px] sm:min-w-[800px] xl:min-w-[1024px]">
-          {/* Headers */}
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
-            {weekDaysHeaders.map(day => (
-              <div key={day} className="py-1.5 sm:py-3 text-center text-[10px] sm:text-sm font-semibold text-slate-700 uppercase tracking-wider">
-                <span className="hidden sm:inline">{day}</span>
-                <span className="sm:hidden">{day.slice(0, 3)}</span>
-              </div>
-            ))}
-          </div>
-          
-          {/* Grid de Días */}
-          <div className="grid grid-cols-7 border-l border-t border-slate-200 relative">
-            {loading && (
-              <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-              </div>
-            )}
+      <div className="grid grid-cols-1 lg:grid-cols-10 gap-6 print:block">
+        {/* Lado Izquierdo: Calendario Mensual Compacto */}
+        <div className="lg:col-span-7 bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 overflow-hidden h-fit print:w-full">
+          <div className="min-w-full">
+            {/* Headers de días */}
+            <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+              {weekDaysHeaders.map(day => (
+                <div key={day} className="py-2 text-center text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  <span className="hidden sm:inline">{day}</span>
+                  <span className="sm:hidden">{day.slice(0, 3)}</span>
+                </div>
+              ))}
+            </div>
             
-            {daysInCalendar.map((day) => {
-              const isToday = isTodayFn(day);
-              const isWeekend = isWeekendFn(day);
-              const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+            {/* Grid de Días */}
+            <div className="grid grid-cols-7 border-l border-t border-slate-200 relative">
+              {loading && (
+                <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                </div>
+              )}
               
-              const isPast = isBefore(startOfDay(day), startOfDay(new Date()));
-              const canEdit = isAdmin && !isPast;
+              {daysInCalendar.map((day) => {
+                const isToday = isTodayFn(day);
+                const isWeekend = isWeekendFn(day);
+                const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+                const dateStr = format(day, "yyyy-MM-dd");
+                const isSelected = dateStr === selectedDateStr;
 
-              return (
-                 <div key={day.toISOString()} className={`transition-opacity h-full flex flex-col ${!isCurrentMonth ? 'opacity-40' : ''}`}>
-                   <CalendarCell 
-                     date={day}
-                     isToday={isToday}
-                     isWeekend={isWeekend}
-                     isAdmin={canEdit}
-                     agents={agents}
-                     shifts={shifts}
-                     ferias={ferias}
-                     onAssignShift={handleAssignShift}
-                     onRemoveAgent={handleRemoveAgentFromShift}
-                     onUpdateHorarioTurno={handleUpdateHorarioTurno}
-                   />
-                 </div>
-              )
-            })}
+                // Omitir días que no son del mes en curso pintándolos vacíos
+                if (!isCurrentMonth) {
+                  return (
+                    <div 
+                      key={day.toISOString()} 
+                      className="bg-slate-50/30 border-b border-r border-slate-200 min-h-[90px] opacity-10 print:hidden"
+                    />
+                  );
+                }
+
+                const dayShifts = shifts.filter(s => s.fecha === dateStr && s.agente_id);
+                const holiday = FERIADOS_2026.find(h => h.date === dateStr);
+
+                return (
+                  <div 
+                    key={day.toISOString()} 
+                    onClick={() => setSelectedDate(day)}
+                    className={`p-2 border-b border-r border-slate-200 min-h-[100px] cursor-pointer transition-all flex flex-col justify-between select-none relative ${
+                      isSelected 
+                        ? 'bg-blue-50/50 ring-2 ring-blue-500/80 ring-inset z-10' 
+                        : isWeekend 
+                        ? 'bg-slate-50/60 hover:bg-slate-100/50' 
+                        : 'hover:bg-slate-50/50'
+                    }`}
+                  >
+                    {/* Encabezado del Día */}
+                    <div className="flex items-center justify-between">
+                      <span className={`text-xs font-bold ${
+                        isToday 
+                          ? 'bg-blue-600 text-white w-5 h-5 rounded-full flex items-center justify-center' 
+                          : holiday 
+                          ? 'text-red-650'
+                          : 'text-slate-700'
+                      }`}>
+                        {format(day, "d")}
+                      </span>
+                      {holiday && (
+                        <span className="w-1.5 h-1.5 bg-red-500 rounded-full" title={holiday.name} />
+                      )}
+                    </div>
+
+                    {/* Lista super compacta de agentes asignados */}
+                    <div className="mt-2 flex flex-col gap-1 max-h-[65px] overflow-y-auto custom-scrollbar">
+                      {dayShifts.map((s) => {
+                        const agent = agents.find(a => a.id === s.agente_id);
+                        if (!agent) return null;
+                        
+                        // Iniciales del tipo de turno
+                        const shortShift = s.tipo_turno === "Franco Compensatorio" 
+                          ? "F" 
+                          : s.tipo_turno[0].toUpperCase();
+
+                        return (
+                          <div 
+                            key={s.id} 
+                            className="text-[9px] bg-white border border-slate-200 text-slate-700 px-1 py-0.5 rounded truncate font-medium flex items-center justify-between shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                            title={`${s.tipo_turno}: ${agent.nombre} ${s.horario_personalizado ? `(${s.horario_personalizado})` : ''}`}
+                          >
+                            <span className="truncate pr-1">
+                              {agent.nombre.split(" ")[0]}
+                              {s.horario_personalizado ? ` (${s.horario_personalizado})` : ''}
+                            </span>
+                            <span className="text-[7px] text-blue-600 font-bold shrink-0">{shortShift}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Lado Derecho: Panel de Detalle del Día Seleccionado */}
+        <div className="lg:col-span-3 space-y-4 print:hidden">
+          <div className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-slate-200 p-4 space-y-4">
+            <div className="border-b border-slate-100 pb-3">
+              <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600">Detalles del Día</span>
+              <h2 className="text-lg font-bold text-slate-800 capitalize mt-0.5">
+                {format(selectedDate, "eeee d 'de' MMMM", { locale: es })}
+              </h2>
+              {selectedDateIsWeekend && (
+                <span className="inline-block mt-1 bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-semibold px-2 py-0.5 rounded-full">
+                  Fin de Semana
+                </span>
+              )}
+            </div>
+
+            {/* Renderizar la celda detallada para edición de este día */}
+            <div className="bg-slate-50/50 rounded-xl p-2 border border-slate-100">
+              <CalendarCell 
+                date={selectedDate}
+                isToday={selectedDateIsToday}
+                isWeekend={selectedDateIsWeekend}
+                isAdmin={selectedDateCanEdit}
+                agents={agents}
+                shifts={shifts}
+                ferias={ferias}
+                onAssignShift={handleAssignShift}
+                onRemoveAgent={handleRemoveAgentFromShift}
+                onUpdateHorarioTurno={handleUpdateHorarioTurno}
+                isCurrentMonth={true}
+              />
+            </div>
           </div>
         </div>
       </div>

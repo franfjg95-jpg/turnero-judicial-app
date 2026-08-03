@@ -4,8 +4,8 @@ import { api } from "../../api/supabase";
 import { useAuth } from "../../contexts/AuthContext";
 
 export function NotificationBanner() {
-  const { user, profile } = useAuth();
-  const isAdmin = user?.email === 'toledomariajulieta.mpf@gmail.com' || profile?.is_admin === true;
+  const { profile, currentAdminId } = useAuth();
+  const isAdmin = profile?.is_admin === true;
 
   const [message, setMessage] = useState("Cargando notificaciones...");
   const [isEditing, setIsEditing] = useState(false);
@@ -18,8 +18,10 @@ export function NotificationBanner() {
   const [successToast, setSuccessToast] = useState(false);
 
   useEffect(() => {
-    loadNotification();
-  }, []);
+    if (currentAdminId) {
+      loadNotification();
+    }
+  }, [currentAdminId]);
 
   useEffect(() => {
     if (!confirmModal) return;
@@ -32,7 +34,8 @@ export function NotificationBanner() {
 
   const loadNotification = async () => {
     try {
-      const data = await api.getNotification();
+      if (!currentAdminId) return;
+      const data = await api.getNotification(currentAdminId);
       if (data && data.mensaje) {
         setMessage(data.mensaje);
         setEditValue(data.mensaje);
@@ -50,15 +53,16 @@ export function NotificationBanner() {
   };
 
   const handleSaveClick = () => {
-    if (!editValue.trim()) return;
+    if (!editValue.trim() || !currentAdminId) return;
     setConfirmModal(true);
   };
 
   const executeSave = async () => {
+    if (!currentAdminId) return;
     setSaving(true);
     setErrorLine("");
     try {
-      await api.updateNotification(editValue);
+      await api.updateNotification(editValue, currentAdminId);
       setMessage(editValue);
       setIsEditing(false);
       setConfirmModal(false);

@@ -12,29 +12,34 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    async getPendingProfiles(): Promise<Profile[]> {
-      const { data, error } = await supabase.from('perfiles').select('*').eq('estado', 'pendiente').order('created_at', { ascending: false });
+    async getPendingProfiles(adminId: string): Promise<Profile[]> {
+      const { data, error } = await supabase.from('perfiles').select('*').eq('estado', 'pendiente').eq('admin_id', adminId).order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     },
     async authorizeProfile(id: string): Promise<void> {
       const { error } = await supabase.from('perfiles').update({ estado: 'aprobado' }).eq('id', id);
       if (error) throw error;
+    },
+    async updateWorkerCredentials(adminId: string, username: string, password: string): Promise<void> {
+      const { error } = await supabase.from('perfiles').update({ trabajador_usuario: username, trabajador_clave: password }).eq('id', adminId);
+      if (error) throw error;
     }
   },
   agents: {
-    async getAll(): Promise<Agent[]> {
+    async getAll(adminId: string): Promise<Agent[]> {
       const { data, error } = await supabase
         .from("agentes")
         .select("*")
+        .eq("admin_id", adminId)
         .order("nombre");
       if (error) throw error;
       return data || [];
     },
-    async create(agent: Omit<Agent, "id">): Promise<Agent> {
+    async create(agent: Omit<Agent, "id">, adminId: string): Promise<Agent> {
       const { data, error } = await supabase
         .from("agentes")
-        .insert([agent])
+        .insert([{ ...agent, admin_id: adminId }])
         .select()
         .single();
       if (error) throw error;
@@ -56,28 +61,29 @@ export const api = {
     },
   },
   shifts: {
-    async getByDateRange(startDate: string, endDate: string): Promise<Shift[]> {
+    async getByDateRange(startDate: string, endDate: string, adminId: string): Promise<Shift[]> {
       const { data, error } = await supabase
         .from("turnos")
         .select("*")
+        .eq("admin_id", adminId)
         .gte("fecha", startDate)
         .lte("fecha", endDate);
       if (error) throw error;
       return data || [];
     },
-    async assign(fecha: string, tipo_turno: ShiftType, agente_id: string, horario_personalizado?: string): Promise<Shift> {
+    async assign(fecha: string, tipo_turno: ShiftType, agente_id: string, adminId: string, horario_personalizado?: string): Promise<Shift> {
       // 1. Obtener horario personalizado de otros agentes en el mismo turno si existe
-      const { data: existing } = await supabase.from('turnos').select('*').match({fecha, tipo_turno}).limit(1);
+      const { data: existing } = await supabase.from('turnos').select('*').match({fecha, tipo_turno, admin_id: adminId}).limit(1);
       
-      const payload: any = { fecha, tipo_turno, agente_id };
+      const payload: any = { fecha, tipo_turno, agente_id, admin_id: adminId };
       if (horario_personalizado !== undefined) {
          payload.horario_personalizado = horario_personalizado;
       } else if (existing && existing.length > 0) {
          payload.horario_personalizado = existing[0].horario_personalizado;
       }
 
-      // 2. Revisar si este agente DE CASUALIDAD ya está insertado para no duplicar error
-      const { data: duplicate } = await supabase.from('turnos').select('*').match({fecha, tipo_turno, agente_id}).maybeSingle();
+      // 2. Revisar si este agente ya está insertado para no duplicar error
+      const { data: duplicate } = await supabase.from('turnos').select('*').match({fecha, tipo_turno, agente_id, admin_id: adminId}).maybeSingle();
       if (duplicate) return duplicate;
 
       // 3. Insertamos el nuevo agente en SU PROPIA FILA
@@ -85,15 +91,15 @@ export const api = {
       if (error) throw error;
       return data;
     },
-    async updateHorarioPorTurno(fecha: string, tipo_turno: ShiftType, horario_personalizado: string): Promise<void> {
-      const { error } = await supabase.from('turnos').update({ horario_personalizado }).match({ fecha, tipo_turno });
+    async updateHorarioPorTurno(fecha: string, tipo_turno: ShiftType, horario_personalizado: string, adminId: string): Promise<void> {
+      const { error } = await supabase.from('turnos').update({ horario_personalizado }).match({ fecha, tipo_turno, admin_id: adminId });
       if (error) throw error;
     },
-    async removeAgent(fecha: string, tipo_turno: ShiftType, agente_id: string): Promise<void> {
+    async removeAgent(fecha: string, tipo_turno: ShiftType, agente_id: string, adminId: string): Promise<void> {
       const { error } = await supabase
         .from("turnos")
         .delete()
-        .match({ fecha, tipo_turno, agente_id });
+        .match({ fecha, tipo_turno, agente_id, admin_id: adminId });
       if (error) throw error;
     },
     async removeShiftById(id: string): Promise<void> {
@@ -102,7 +108,7 @@ export const api = {
     },
   },
   ferias: {
-    async getAll(): Promise<Feria[]> {
+    async getAll(adminId: string): Promise<Feria[]> {
       const { data, error } = await supabase
         .from("ferias")
         .select(`
@@ -111,14 +117,15 @@ export const api = {
             nombre
           )
         `)
+        .eq("admin_id", adminId)
         .order("fecha_inicio", { ascending: false });
       if (error) throw error;
       return data || [];
     },
-    async create(feria: { agente_id: string; fecha_inicio: string; fecha_fin: string }): Promise<Feria> {
+    async create(feria: { agente_id: string; fecha_inicio: string; fecha_fin: string; motivo?: string | null }, adminId: string): Promise<Feria> {
       const { data, error } = await supabase
         .from("ferias")
-        .insert([feria])
+        .insert([{ ...feria, admin_id: adminId }])
         .select()
         .single();
       if (error) throw error;
@@ -130,21 +137,20 @@ export const api = {
     },
   },
   
-  getNotification: async () => {
+  getNotification: async (adminId: string) => {
     const { data, error } = await supabase
       .from("notificaciones")
       .select("*")
-      .eq("id", 1)
-      .single();
-    if (error && error.code !== "PGRST116") throw error;
+      .eq("admin_id", adminId)
+      .maybeSingle();
+    if (error) throw error;
     return data;
   },
 
-  updateNotification: async (mensaje: string) => {
+  updateNotification: async (mensaje: string, adminId: string) => {
     const { data, error } = await supabase
       .from("notificaciones")
-      .update({ mensaje })
-      .eq("id", 1)
+      .upsert({ admin_id: adminId, mensaje }, { onConflict: 'admin_id' })
       .select()
       .single();
     if (error) {

@@ -15,6 +15,7 @@ interface Props {
   isToday: boolean;
   isWeekend: boolean;
   isAdmin: boolean;
+  isCurrentMonth?: boolean;
 }
 
 export function CalendarCell({
@@ -28,6 +29,7 @@ export function CalendarCell({
   isToday,
   isWeekend,
   isAdmin,
+  isCurrentMonth = true,
 }: Props) {
   const [loadingBlock, setLoadingBlock] = useState<ShiftType | null>(null);
   
@@ -44,6 +46,10 @@ export function CalendarCell({
       .filter(f => dateStr >= f.fecha_inicio && dateStr <= f.fecha_fin)
       .map(f => f.agente_id);
   }, [ferias, dateStr]);
+
+  const allAssignedOnDayIds = useMemo(() => {
+    return dayShifts.map((s) => s.agente_id).filter(Boolean);
+  }, [dayShifts]);
   
   const [localSchedules, setLocalSchedules] = useState<Record<string, string>>({});
   
@@ -105,15 +111,15 @@ export function CalendarCell({
     return (
       <div
         key={blockLabel}
-        className={`flex flex-col gap-1 sm:gap-1.5 p-1 sm:p-1.5 xl:p-2.5 rounded-md border min-h-[36px] sm:min-h-[50px] ${
+        className={`flex flex-col gap-1 sm:gap-1.5 p-1 sm:p-2 xl:p-2.5 rounded-lg border min-h-[36px] sm:min-h-[50px] shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all duration-200 hover:shadow-sm ${
           blockLabel === "Franco Compensatorio"
-            ? "bg-red-50 border-red-300"
+            ? "bg-red-50/70 border-red-200"
             : blockLabel === "Trasnoche"
-            ? "bg-blue-50 border-blue-300"
+            ? "bg-blue-50/70 border-blue-200"
             : isIntermedio
-            ? "bg-rose-50 border-rose-200"
-            : "bg-white border-slate-300"
-        }`}
+            ? "bg-rose-50/70 border-rose-200"
+            : "bg-white border-slate-200"
+        } ${assignedAgents.length === 0 ? 'print:hidden' : ''}`}
       >
         <div className={`flex items-center w-full mb-0.5 ${blockLabel === "Franco Compensatorio" ? "justify-center text-center" : "justify-between"}`}>
           <span
@@ -135,7 +141,7 @@ export function CalendarCell({
                    type="text"
                    maxLength={10}
                    placeholder="ej: 07-13 hs"
-                   className="ml-0.5 xl:ml-1 w-20 text-[9px] xl:text-[10px] bg-transparent outline-none border-b border-dashed border-slate-300 focus:border-blue-400 font-medium placeholder:text-slate-300 text-slate-600 px-0.5 capitalize tracking-normal"
+                   className="ml-1 w-20 text-[9px] xl:text-[10px] bg-slate-50/50 rounded border border-slate-200 outline-none focus:border-blue-400 focus:bg-white font-medium placeholder:text-slate-300 text-slate-600 px-1 py-0.5 transition-all capitalize tracking-normal"
                    value={localSchedules[blockLabel] ?? currentHorario}
                    onChange={(e) => setLocalSchedules({...localSchedules, [blockLabel]: e.target.value})}
                    onBlur={(e) => {
@@ -150,8 +156,8 @@ export function CalendarCell({
                 />
               ) : (
                  currentHorario && (
-                   <span className="ml-0.5 xl:ml-1 text-[9px] xl:text-[10px] font-semibold text-slate-500 lowercase tracking-normal flex-shrink-0">
-                     ({currentHorario})
+                   <span className="ml-1 text-[9px] xl:text-[10px] font-semibold text-slate-500 bg-slate-100 rounded px-1 lowercase tracking-normal flex-shrink-0">
+                     {currentHorario}
                    </span>
                  )
               )
@@ -163,10 +169,10 @@ export function CalendarCell({
 
         <div className="w-full flex flex-col gap-1.5">
           {assignedAgents.length > 0 ? (
-            <div className="flex flex-col gap-1 w-full mt-1">
+            <div className="flex flex-col gap-1.5 w-full mt-0.5">
               {assignedAgents.map((ag) => (
-                <div key={ag?.id} className={`flex items-center justify-between text-[9px] sm:text-[11px] xl:text-[13px] font-semibold px-1.5 sm:px-2 py-0.5 sm:py-1 bg-white rounded shadow-sm border ${isAdmin ? "border-slate-300" : "border-slate-200"}`}>
-                  <span className="truncate text-slate-800 leading-tight" title={ag?.nombre}>{ag?.nombre}</span>
+                <div key={ag?.id} className={`flex items-center justify-between text-[9px] sm:text-[11px] xl:text-[13px] font-semibold px-2 py-1 bg-white rounded-lg shadow-sm border transition-all hover:border-slate-350 ${isAdmin ? "border-slate-200" : "border-slate-100"}`}>
+                  <span className="truncate text-slate-700 leading-tight" title={ag?.nombre}>{ag?.nombre}</span>
                   {isAdmin && (
                     <button
                       type="button"
@@ -182,7 +188,7 @@ export function CalendarCell({
                         });
                       }}
                       disabled={isSaving}
-                      className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded p-1 ml-2 shrink-0 transition-colors disabled:opacity-50 print:hidden"
+                      className="text-slate-400 hover:text-red-650 hover:bg-red-50 rounded-md p-0.5 ml-2 shrink-0 transition-colors disabled:opacity-50 print:hidden"
                       title="Quitar sumariante"
                     >
                       <X size={12} strokeWidth={2.5} className="sm:w-[14px] sm:h-[14px]" />
@@ -193,25 +199,25 @@ export function CalendarCell({
             </div>
           ) : (
             !isAdmin && (
-              <div className="text-[9px] sm:text-[11px] xl:text-xs font-semibold px-1 py-0.5 sm:py-1 truncate text-slate-400">
+              <div className="text-[9px] sm:text-[11px] xl:text-xs font-semibold px-1 py-0.5 truncate text-slate-400 text-center bg-slate-100/50 rounded">
                 - Libre -
               </div>
             )
           )}
 
           {isAdmin && assignedAgents.length < 6 && (
-            <div className="relative mt-1 print:hidden">
+            <div className="relative mt-0.5 print:hidden">
               {openSelect === blockLabel && (
                 <div className="fixed inset-0 z-[40]" onClick={() => setOpenSelect(null)}></div>
               )}
               {openSelect === blockLabel ? (
-                <div className="absolute top-0 left-0 w-full z-[50] bg-white border border-slate-300 rounded shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100 min-w-[150px]">
-                  <div className="flex items-center px-2 py-1.5 border-b border-slate-200 bg-slate-50">
+                <div className="absolute top-full left-0 mt-1 w-full z-[50] bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150 min-w-[170px]">
+                  <div className="flex items-center px-2.5 py-1.5 border-b border-slate-150 bg-slate-50">
                     <Search size={14} className="text-slate-400 mr-1.5 shrink-0" />
                     <input
                       type="text"
-                      className="w-full text-[10px] xl:text-xs outline-none bg-transparent text-slate-800 placeholder:text-slate-400"
-                      placeholder="Buscar sumariante..."
+                      className="w-full text-[10px] xl:text-xs outline-none bg-transparent text-slate-800 placeholder:text-slate-400 font-medium"
+                      placeholder="Buscar..."
                       autoFocus
                       value={searchQuery}
                       onChange={(e) => {
@@ -219,7 +225,7 @@ export function CalendarCell({
                         setFocusedIndex(0);
                       }}
                       onKeyDown={(e) => {
-                        const filtered = agents.filter(a => !assignedIds.includes(a.id) && a.nombre.toLowerCase().includes(searchQuery.toLowerCase()));
+                        const filtered = agents.filter(a => !allAssignedOnDayIds.includes(a.id) && a.nombre.toLowerCase().includes(searchQuery.toLowerCase()));
                         if (e.key === 'ArrowDown') {
                           e.preventDefault();
                           setFocusedIndex(prev => (prev + 1) % filtered.length);
@@ -241,33 +247,33 @@ export function CalendarCell({
                       }}
                     />
                   </div>
-                  <div className="max-h-36 overflow-y-auto w-full flex flex-col py-0.5 scrollbar-thin scrollbar-thumb-slate-200">
+                  <div className="max-h-36 overflow-y-auto w-full flex flex-col py-1 scrollbar-thin scrollbar-thumb-slate-200">
                     {(() => {
-                      const filtered = agents.filter(a => !assignedIds.includes(a.id) && a.nombre.toLowerCase().includes(searchQuery.toLowerCase()));
+                      const filtered = agents.filter(a => !allAssignedOnDayIds.includes(a.id) && a.nombre.toLowerCase().includes(searchQuery.toLowerCase()));
                       if (filtered.length === 0) {
-                        return <div className="px-2 py-2 text-center text-[10px] xl:text-xs text-slate-500 italic">Sin resultados</div>;
+                        return <div className="px-2 py-3 text-center text-[10px] xl:text-xs text-slate-450 italic">Sin resultados</div>;
                       }
                       return filtered.map((ag, idx) => {
                         const isFocused = focusedIndex === idx;
                         const isEnFeria = agentsOnFeriaIds.includes(ag.id);
                         return (
-                          <button
-                            key={ag.id}
-                            disabled={isEnFeria}
-                            className={`text-left px-2 py-1.5 text-[10px] xl:text-xs transition-colors flex justify-between items-center ${
-                               isEnFeria ? 'opacity-50 bg-slate-50 cursor-not-allowed' :
-                               isFocused ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'}`}
-                            onMouseEnter={() => !isEnFeria && setFocusedIndex(idx)}
-                            onClick={() => {
-                              if (isEnFeria) return;
-                              handleAssign(blockLabel, ag.id);
-                              setOpenSelect(null);
-                              setSearchQuery("");
-                            }}
-                          >
-                            <span className={isEnFeria ? "line-through decoration-slate-300" : ""}>{ag.nombre}</span>
-                            {isEnFeria && <span className="text-[9px] xl:text-[10px] font-bold text-sky-600 mx-1 rounded bg-sky-100 px-1.5 py-0.5 whitespace-nowrap">🌴 En Feria</span>}
-                          </button>
+                           <button
+                             key={ag.id}
+                             disabled={isEnFeria}
+                             className={`text-left px-3 py-1.5 text-[10px] xl:text-xs transition-colors flex justify-between items-center ${
+                                isEnFeria ? 'opacity-40 bg-slate-50 cursor-not-allowed' :
+                                isFocused ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-slate-650 hover:bg-slate-50'}`}
+                             onMouseEnter={() => !isEnFeria && setFocusedIndex(idx)}
+                             onClick={() => {
+                               if (isEnFeria) return;
+                               handleAssign(blockLabel, ag.id);
+                               setOpenSelect(null);
+                               setSearchQuery("");
+                             }}
+                           >
+                             <span className={isEnFeria ? "line-through" : ""}>{ag.nombre}</span>
+                             {isEnFeria && <span className="text-[9px] xl:text-[10px] font-bold text-sky-650 mx-1 rounded-full bg-sky-50 px-2 py-0.5 whitespace-nowrap">🌴 Feria</span>}
+                           </button>
                         );
                       });
                     })()}
@@ -281,9 +287,9 @@ export function CalendarCell({
                     setSearchQuery("");
                     setFocusedIndex(0);
                   }}
-                  className={`flex items-center justify-between text-[10px] xl:text-xs font-medium bg-white border border-slate-300 rounded p-1.5 outline-none text-slate-600 w-full ${isSaving ? 'opacity-50 cursor-wait' : 'focus:border-blue-500 focus:ring-1 focus:ring-blue-500 hover:border-slate-400 shadow-sm hover:text-slate-800 transition-colors'}`}
+                  className={`flex items-center justify-between text-[10px] xl:text-xs font-medium bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 outline-none text-slate-500 w-full ${isSaving ? 'opacity-50 cursor-wait' : 'focus:border-blue-500 focus:bg-white hover:border-slate-350 hover:text-slate-700 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.01)]'}`}
                 >
-                  <span className="truncate">{assignedAgents.length > 0 ? "+ Agregar sumariante..." : "Seleccionar sumariante..."}</span>
+                  <span className="truncate">{assignedAgents.length > 0 ? "+ Agregar" : "Asignar..."}</span>
                   <Search size={12} className="text-slate-400 shrink-0 ml-1" />
                 </button>
               )}
@@ -308,46 +314,50 @@ export function CalendarCell({
   return (
     <>
       <div
-        className={`min-h-[140px] xl:min-h-[180px] h-full p-1.5 xl:p-3 flex flex-col gap-1.5 transition-colors group ${
-          isToday ? "ring-2 ring-blue-500 ring-inset" : "border-r border-b border-slate-200"
-        } ${isWeekend ? "bg-slate-100" : "bg-slate-50"}`}
+        className={`min-h-[140px] xl:min-h-[180px] h-full p-2 xl:p-3 flex flex-col gap-2 transition-all duration-300 rounded-xl border border-slate-200/60 shadow-[0_2px_8px_rgba(0,0,0,0.02)] ${
+          isToday 
+            ? "ring-2 ring-blue-500 ring-inset bg-blue-50/10" 
+            : isWeekend 
+            ? "bg-slate-100/65" 
+            : "bg-white/80"
+        } hover:shadow-md hover:border-slate-300/80 ${!isCurrentMonth ? 'print:min-h-[30px] print:h-[30px] print:bg-slate-50/10' : ''}`}
       >
-        <div className="flex justify-between items-center mb-1 px-0.5">
+        <div className="flex justify-between items-center mb-0.5 px-0.5">
           <span
             className={`text-sm xl:text-[15px] font-extrabold ${
-              isToday ? "text-blue-600" : "text-slate-800"
+              isToday ? "text-blue-600 bg-blue-50 w-7 h-7 flex items-center justify-center rounded-full" : "text-slate-800"
             }`}
           >
             {format(date, "d")}
           </span>
           <span className={`text-[9px] xl:text-[10px] font-bold uppercase tracking-wider truncate w-16 text-right ${
-            isWeekend ? "text-slate-500" : "text-slate-400"
+            isWeekend ? "text-slate-500" : "text-slate-450"
           }`}>
             {format(date, "EEEE", { locale: es })}
           </span>
         </div>
 
-        <div className="flex flex-col gap-1.5 xl:gap-2 flex-1 justify-start">
+        <div className={`flex flex-col gap-1.5 xl:gap-2 flex-1 justify-start ${!isCurrentMonth ? 'print:hidden' : ''}`}>
           {blocksToRender.map(renderBlock)}
         </div>
       </div>
 
       {deleteModal && (
         <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200" onClick={() => setDeleteModal(null)}>
-          <div className="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
-            <div className="p-5">
-              <h3 className="text-lg font-bold text-slate-800 mb-2">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-100 w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200" onClick={e => e.stopPropagation()}>
+            <div className="p-6">
+              <h3 className="text-lg font-bold text-slate-900 mb-2">
                 ¿Quitar sumariante?
               </h3>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                ¿Estás seguro de que quieres eliminar a <span className="font-semibold text-slate-800">{deleteModal.agentName}</span> de este turno?
+              <p className="text-slate-650 text-sm leading-relaxed">
+                ¿Estás seguro de que quieres eliminar a <span className="font-semibold text-slate-900">{deleteModal.agentName}</span> de este turno?
               </p>
             </div>
-            <div className="bg-slate-50 px-5 py-3 border-t border-slate-100 flex justify-end gap-3">
+            <div className="bg-slate-50 px-6 py-4 border-t border-slate-100 flex justify-end gap-3">
               <button
                 type="button"
                 onClick={() => setDeleteModal(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/70 rounded-xl transition-all duration-250 bg-white border border-slate-200"
                 disabled={loadingBlock !== null}
               >
                 Cancelar
@@ -356,16 +366,14 @@ export function CalendarCell({
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={loadingBlock !== null}
-                className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shadow-sm flex items-center gap-2"
+                className="px-4 py-2 text-sm font-semibold text-white bg-red-650 hover:bg-red-700 rounded-xl transition-all duration-250 shadow-sm flex items-center gap-2"
               >
-                {loadingBlock !== null && <Loader2 size={14} className="animate-spin" />}
                 Eliminar
               </button>
             </div>
           </div>
         </div>
       )}
-
     </>
   );
 }

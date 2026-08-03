@@ -4,6 +4,8 @@ export interface Agent {
   id: string;
   nombre: string;
   puesto: string;
+  usuario?: string;
+  clave?: string;
 }
 
 export interface Shift {
@@ -21,6 +23,9 @@ export interface Profile {
   nombre?: string;
   estado: 'pendiente' | 'aprobado';
   is_admin: boolean;
+  admin_id?: string | null;
+  trabajador_usuario?: string | null;
+  trabajador_clave?: string | null;
   created_at: string;
 }
 
@@ -29,6 +34,7 @@ export interface Feria {
   agente_id: string;
   fecha_inicio: string; // YYYY-MM-DD
   fecha_fin: string;    // YYYY-MM-DD
+  motivo?: string | null;
   created_at?: string;
   agentes?: {
     nombre: string;

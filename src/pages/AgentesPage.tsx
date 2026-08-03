@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Trash2, Edit2, Loader2 } from "lucide-react";
+import { Trash2, Edit2, Loader2, Key } from "lucide-react";
 import { api } from "../api/supabase";
 import type { Agent } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 
 export function AgentesPage() {
-  const { user } = useAuth();
+  const { user, currentAdminId } = useAuth();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -14,6 +14,33 @@ export function AgentesPage() {
   const [form, setForm] = useState({ nombre: "", puesto: "" });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ isOpen: boolean, id: string, name: string } | null>(null);
+
+  const handleGenerateAgentCredentials = async (agent: Agent) => {
+    const cleanName = agent.nombre
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/_+/g, "_")
+      .replace(/(^_|_$)/g, "");
+
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const generatedUser = `${cleanName || "sumariante"}`;
+    const generatedPass = `uj_${randomNum}`;
+
+    try {
+      setLoading(true);
+      await api.agents.update(agent.id, {
+        usuario: generatedUser,
+        clave: generatedPass
+      });
+      await loadAgents();
+    } catch (err: any) {
+      setError("Error al generar credenciales: " + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!confirmDelete?.isOpen) return;
@@ -25,15 +52,16 @@ export function AgentesPage() {
   }, [confirmDelete]);
 
   useEffect(() => {
-    if (user) loadAgents();
-  }, [user]);
+    if (currentAdminId) loadAgents();
+  }, [currentAdminId]);
 
   if (!user) return <Navigate to="/" />;
 
   const loadAgents = async () => {
     try {
+      if (!currentAdminId) return;
       setLoading(true);
-      const data = await api.agents.getAll();
+      const data = await api.agents.getAll(currentAdminId);
       setAgents(data);
     } catch (err: any) {
       setError(err.message);
@@ -50,8 +78,8 @@ export function AgentesPage() {
       setLoading(true);
       if (editingId) {
         await api.agents.update(editingId, form);
-      } else {
-        await api.agents.create(form);
+      } else if (currentAdminId) {
+        await api.agents.create(form, currentAdminId);
       }
       setForm({ nombre: "", puesto: "" });
       setEditingId(null);
@@ -154,13 +182,15 @@ export function AgentesPage() {
                 <tr>
                   <th className="px-6 py-4">Nombre</th>
                   <th className="px-6 py-4">Puesto</th>
+                  <th className="px-6 py-4">Usuario</th>
+                  <th className="px-6 py-4">Clave</th>
                   <th className="px-6 py-4 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {agents.length === 0 ? (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-slate-500">
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
                       No hay agentes registrados.
                     </td>
                   </tr>
@@ -169,23 +199,35 @@ export function AgentesPage() {
                     <tr key={ag.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 font-medium text-slate-800">{ag.nombre}</td>
                       <td className="px-6 py-4 text-slate-600">{ag.puesto}</td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleEdit(ag)}
-                          disabled={loading}
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors inline-block mr-2 disabled:opacity-50"
-                          title="Editar"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteClick(ag.id, ag.nombre)}
-                          disabled={loading}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-md transition-colors inline-block disabled:opacity-50"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <td className="px-6 py-4 font-mono text-sm text-slate-500">{ag.usuario || <span className="text-slate-400 italic">No generado</span>}</td>
+                      <td className="px-6 py-4 font-mono text-sm text-slate-500">{ag.clave || <span className="text-slate-400 italic">No generado</span>}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleGenerateAgentCredentials(ag)}
+                            disabled={loading}
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors disabled:opacity-50"
+                            title="Generar Credenciales"
+                          >
+                            <Key size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(ag)}
+                            disabled={loading}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50"
+                            title="Editar"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(ag.id, ag.nombre)}
+                            disabled={loading}
+                            className="p-1.5 text-red-650 hover:bg-red-55/90 rounded-md transition-colors disabled:opacity-50"
+                            title="Eliminar"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
