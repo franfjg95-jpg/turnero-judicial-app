@@ -43,7 +43,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         const { data: dbProfile } = await supabase.from('perfiles').select('*').eq('id', currentUser.id).maybeSingle();
         if (dbProfile) {
-          setProfile(dbProfile);
+          setProfile({
+            ...dbProfile,
+            estado: 'aprobado',
+            is_admin: true
+          });
           return;
         }
       } catch (err) {

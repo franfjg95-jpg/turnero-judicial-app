@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Trash2, Edit2, Loader2, Key } from "lucide-react";
+import { Trash2, Edit2, Loader2, Key, ArrowLeft } from "lucide-react";
 import { api } from "../api/supabase";
 import type { Agent } from "../types";
 import { useAuth } from "../contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, Link } from "react-router-dom";
 
 export function AgentesPage() {
   const { user, currentAdminId } = useAuth();
@@ -113,10 +113,17 @@ export function AgentesPage() {
 
   return (
     <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight text-slate-900">
           Personal / Agentes
         </h1>
+        <Link 
+          to="/"
+          className="flex items-center gap-1.5 sm:gap-2 bg-white hover:bg-slate-50 text-slate-700 px-3 sm:px-4 py-2 rounded-xl border border-slate-200 shadow-sm transition-colors font-semibold text-xs sm:text-sm h-9 sm:h-10 cursor-pointer"
+        >
+          <ArrowLeft size={16} className="shrink-0 text-slate-500" />
+          <span>Volver</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

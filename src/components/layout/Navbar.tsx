@@ -30,8 +30,8 @@ export function Navbar() {
       <header className="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 print:hidden transition-all duration-300">
         <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-blue-600 to-indigo-500 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/20 hover:scale-105 transition-transform">
+            <Link to="/" className="flex items-center gap-3 cursor-pointer group">
+              <div className="bg-gradient-to-tr from-blue-600 to-indigo-500 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform">
                 <Scale size={20} />
               </div>
               <div>
@@ -42,7 +42,7 @@ export function Navbar() {
                   Turnero
                 </h1>
               </div>
-            </div>
+            </Link>
 
             <nav className="flex items-center space-x-1.5 sm:space-x-3">
               {user && profile?.estado === 'aprobado' && (
